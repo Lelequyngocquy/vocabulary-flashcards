@@ -396,14 +396,14 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
       <div
         id="flashcardWrapper"
         ref={wrapperRef}
-        className={`perspective-1000 w-full min-h-[260px] sm:min-h-[290px] flex-1 max-h-[300px] select-none cursor-pointer my-auto ${slideAnim}`}
+        className={`perspective-1000 w-full h-[320px] select-none cursor-pointer flex flex-col ${slideAnim}`}
         onClick={handleFlip}
       >
         {words.length === 0 ? (
           /* Empty State */
           <div
             id="fcEmptyState"
-            className="relative w-full h-full min-h-[320px] sm:min-h-[360px] rounded-[10px] border border-hairline bg-canvas p-6 flex flex-col items-center justify-center text-center space-y-4"
+            className="relative w-full h-full min-h-0 rounded-[10px] border border-hairline bg-canvas p-4 sm:p-6 flex flex-col items-center justify-center text-center space-y-3 sm:space-y-4"
           >
             <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary text-2xl font-mono">
               ✓
@@ -431,12 +431,12 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
           /* Card with Front & Back */
           <div
             id="flashcardInner"
-            className={`relative w-full h-full transform-style-3d card-transition min-h-[320px] sm:min-h-[360px] rounded-[10px] border border-hairline bg-canvas ${
+            className={`relative w-full h-full transform-style-3d card-transition min-h-0 rounded-[10px] border border-hairline bg-canvas ${
               isFlipped ? "rotate-y-180" : ""
             }`}
           >
             {/* FRONT OF CARD */}
-            <div className="absolute inset-0 w-full h-full backface-hidden rounded-[10px] p-4 sm:p-6 md:p-7 flex flex-col justify-between overflow-hidden bg-canvas border border-hairline">
+            <div className="absolute inset-0 w-full h-full backface-hidden rounded-[10px] p-3.5 sm:p-5 md:p-6 flex flex-col justify-between overflow-hidden bg-canvas border border-hairline">
               {/* Front Top Metadata */}
               <div className="flex items-center justify-between">
                 <span
@@ -484,7 +484,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
             </div>
 
             {/* BACK OF CARD */}
-            <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-[10px] p-4 sm:p-6 md:p-7 flex flex-col justify-between overflow-hidden bg-canvas border border-hairline">
+            <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-[10px] p-3.5 sm:p-5 md:p-6 flex flex-col justify-between overflow-hidden bg-canvas border border-hairline">
               {/* Back Top Bar */}
               <div className="flex items-center justify-between pb-2 border-b border-hairline gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -622,13 +622,13 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
       </div>
 
       {/* Controls Row */}
-      <div className="mt-3 sm:mt-5 flex flex-col gap-2.5 sm:gap-3 flex-shrink-0">
+      <div className="mt-2 sm:mt-4 flex flex-col gap-2 sm:gap-2.5 flex-shrink-0">
         {/* Full-width Pronounce Button */}
         <div>
           <button
             onClick={handleSpeakCurrent}
             id="fcAudioBtn"
-            className="w-full py-2.5 sm:py-3 px-4 rounded-[8px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono uppercase tracking-wider cursor-pointer"
+            className="w-full py-2 sm:py-2.5 px-4 rounded-[8px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs sm:text-sm min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono uppercase tracking-wider cursor-pointer"
           >
             <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
               <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
@@ -650,7 +650,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
           <button
             onClick={handleToggleLearned}
             id="fcToggleLearnedAction"
-            className={`flex-1 py-2.5 sm:py-3 px-3 rounded-[8px] min-h-[44px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono cursor-pointer ${
+            className={`flex-1 py-2 sm:py-2.5 px-3 rounded-[8px] min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono cursor-pointer ${
               isLearned
                 ? "bg-canvas-soft border border-primary text-primary font-semibold"
                 : "bg-canvas hover:bg-canvas-soft border border-hairline text-ink"
@@ -660,7 +660,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               {isLearned ? "●" : "○"}
             </span>
             <span id="fcActionLearnedText">
-              {isLearned ? "MASTERED (REVOKE)" : "MARK MASTERED"}
+              {isLearned ? "REVOKE" : "MARK"}
             </span>
           </button>
 
@@ -670,7 +670,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               onToggleFilterIncomplete();
             }}
             id="btnFilterIncomplete"
-            className={`py-2.5 sm:py-3 px-3 rounded-[8px] min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono text-xs sm:text-sm cursor-pointer ${
+            className={`py-2 sm:py-2.5 px-3 rounded-[8px] min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono text-xs sm:text-sm cursor-pointer ${
               filterOnlyIncomplete
                 ? "bg-primary/15 hover:bg-primary/25 border border-primary text-primary font-semibold"
                 : "bg-canvas hover:bg-canvas-soft border border-hairline text-body"
@@ -682,8 +682,8 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
             </span>
             <span id="filterIncompleteText">
               {filterOnlyIncomplete
-                ? `Incomplete (${words.length})`
-                : "Incomplete"}
+                ? `INCOMPLETE (${words.length})`
+                : "INCOMPLETE"}
             </span>
           </button>
 
@@ -693,7 +693,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               onToggleShuffle();
             }}
             id="btnShuffle"
-            className={`py-2.5 sm:py-3 px-3 rounded-[8px] border min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono cursor-pointer ${
+            className={`py-2 sm:py-2.5 px-3 rounded-[8px] border min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono cursor-pointer ${
               isShuffled
                 ? "bg-primary text-primary-on border-primary font-semibold"
                 : "bg-canvas hover:bg-canvas-soft border-hairline text-body"

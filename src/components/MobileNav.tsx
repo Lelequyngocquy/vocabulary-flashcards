@@ -16,7 +16,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   isSoundMuted,
 }) => {
   return (
-    <footer className="md:hidden flex-shrink-0 w-full bg-canvas/95 backdrop-blur-md border-t border-hairline px-3 py-1 flex items-center justify-around font-mono z-30">
+    <footer className="md:hidden flex-shrink-0 w-full bg-canvas/95 backdrop-blur-md border-t border-hairline px-3 pt-1 pb-[max(0.375rem,env(safe-area-inset-bottom,0px))] flex items-center justify-around font-mono z-30">
       <button
         onClick={() => {
           playTapSound(isSoundMuted);

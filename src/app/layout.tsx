@@ -41,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" className={`dark ${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="bg-canvas text-ink antialiased selection:bg-primary/20 selection:text-primary h-screen h-[100dvh] overflow-hidden flex flex-col justify-between">
+      <body className="bg-canvas text-ink antialiased selection:bg-primary/20 selection:text-primary w-full h-full overflow-hidden">
         {children}
       </body>
     </html>

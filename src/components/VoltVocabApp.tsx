@@ -223,6 +223,30 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
     };
   }, [showToast]);
 
+  // Track exact visible viewport height on mobile to prevent browser UI from pushing menu down
+  useEffect(() => {
+    const updateAppHeight = () => {
+      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${h}px`);
+    };
+
+    updateAppHeight();
+    window.addEventListener('resize', updateAppHeight);
+    window.addEventListener('orientationchange', updateAppHeight);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateAppHeight);
+      window.visualViewport.addEventListener('scroll', updateAppHeight);
+    }
+    return () => {
+      window.removeEventListener('resize', updateAppHeight);
+      window.removeEventListener('orientationchange', updateAppHeight);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateAppHeight);
+        window.visualViewport.removeEventListener('scroll', updateAppHeight);
+      }
+    };
+  }, []);
+
   // Handle Tab Switch
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -336,7 +360,10 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
   const baseUnitWords = currentUnit === 'ALL' ? allWords : allWords.filter((w) => w.library === currentUnit);
 
   return (
-    <div className="h-screen h-[100dvh] flex flex-col overflow-hidden bg-canvas text-ink select-none">
+    <div
+      className="fixed inset-0 w-full flex flex-col overflow-hidden bg-canvas text-ink select-none"
+      style={{ height: 'var(--app-height, 100dvh)' }}
+    >
       <Toast message={toastMsg} visible={toastVisible} isError={toastIsError} />
 
       <Header
