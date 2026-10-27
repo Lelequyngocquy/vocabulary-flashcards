@@ -1,5 +1,6 @@
 # =====================================================================
 # SCRIPT BUILD VÀ DEPLOY NEXT.JS FULLSTACK LÊN VPS EC2
+# NGUYÊN TẮC: BUILD 100% TẠI LOCAL, VPS CHỈ LOAD VÀ CHẠY IMAGE (KHÔNG BUILD TRÊN VPS)
 # =====================================================================
 $ErrorActionPreference = "Stop"
 
@@ -9,7 +10,8 @@ $IMAGE_NAME = "ielts-vocab-app:latest"
 $ARCHIVE_NAME = "ielts-vocab-app.tar.gz"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host ">>> 1. Building Next.js Docker Image (Linux/amd64)..." -ForegroundColor Cyan
+Write-Host ">>> 1. Building Next.js Docker Image LOCALLY (Linux/amd64)..." -ForegroundColor Cyan
+Write-Host ">>> (Khong build tren VPS de tranh tran RAM/OOM crash Ubuntu)" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Cyan
 docker build --platform linux/amd64 -t $IMAGE_NAME .
 
