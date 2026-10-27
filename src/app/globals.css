@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #101010;
+  color: #f2f2f2;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow-x: hidden;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+*, *::before, *::after {
+  touch-action: manipulation;
+}
+
+button, a, input, select, textarea, [role="button"], .tap-bounce, .perspective-1000, #flashcardInner {
+  touch-action: manipulation;
+  -ms-touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+
+.perspective-1000 {
+  perspective: 1200px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.card-transition {
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-out-left {
+  animation: cardSlideOutLeft 0.16s cubic-bezier(0.4, 0, 0.7, 1) forwards;
+}
+
+.slide-in-right {
+  animation: cardSlideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.slide-out-right {
+  animation: cardSlideOutRight 0.16s cubic-bezier(0.4, 0, 0.7, 1) forwards;
+}
+
+.slide-in-left {
+  animation: cardSlideInLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cardSlideOutLeft {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(-80px) scale(0.97); opacity: 0; }
+}
+
+@keyframes cardSlideInRight {
+  0% { transform: translateX(80px) scale(0.97); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes cardSlideOutRight {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(80px) scale(0.97); opacity: 0; }
+}
+
+@keyframes cardSlideInLeft {
+  0% { transform: translateX(-80px) scale(0.97); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #101010;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3d3a39;
+  border-radius: 4px;
+}
+
+.tap-bounce {
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tap-bounce:active {
+  transform: scale(0.97);
+}
+
+.dashed-divider {
+  border-top: 1px dashed rgba(79, 93, 117, 0.4);
+}
+
+@keyframes soundwave {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+
+.soundwave-bar:nth-child(1) { animation: soundwave 0.8s ease-in-out infinite; }
+.soundwave-bar:nth-child(2) { animation: soundwave 0.8s ease-in-out infinite 0.2s; }
+.soundwave-bar:nth-child(3) { animation: soundwave 0.8s ease-in-out infinite 0.4s; }
+.soundwave-bar:nth-child(4) { animation: soundwave 0.8s ease-in-out infinite 0.1s; }
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* DICTIONARY VIEW: PINNED HEADER & FILTER CARD + INDEPENDENT SCROLLING LIST */
+body.dictionary-mode {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden !important;
+  padding-bottom: 0 !important;
+}
+
+body.dictionary-mode main {
+  height: calc(100vh - 53px);
+  height: calc(100dvh - 53px);
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-bottom: 4.5rem !important; /* Spacing for mobile bottom navigation */
+}
+
+@media (min-width: 768px) {
+  body.dictionary-mode main {
+    height: calc(100vh - 57px);
+    height: calc(100dvh - 57px);
+    padding-bottom: 1.25rem !important;
+  }
+}
+
+body.dictionary-mode #tab-list {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+body.dictionary-mode #dictFilterCard {
+  flex-shrink: 0 !important;
+}
+
+body.dictionary-mode #dictListContainer {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+}
+
+/* TYPE OF WORD BADGES: DISTINCTIVE COLOR PALETTE */
+.badge-pos-noun {
+  background-color: rgba(56, 189, 248, 0.12) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+.badge-pos-verb {
+  background-color: rgba(52, 211, 153, 0.12) !important;
+  color: #34d399 !important;
+  border-color: rgba(52, 211, 153, 0.35) !important;
+}
+
+.badge-pos-adj {
+  background-color: rgba(192, 132, 252, 0.12) !important;
+  color: #c084fc !important;
+  border-color: rgba(192, 132, 252, 0.35) !important;
+}
+
+.badge-pos-adv {
+  background-color: rgba(251, 191, 36, 0.12) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(251, 191, 36, 0.35) !important;
+}
+
+.badge-pos-phrase {
+  background-color: rgba(251, 113, 133, 0.12) !important;
+  color: #fb7185 !important;
+  border-color: rgba(251, 113, 133, 0.35) !important;
+}
+
+.badge-pos-idiom {
+  background-color: rgba(232, 121, 249, 0.12) !important;
+  color: #e879f9 !important;
+  border-color: rgba(232, 121, 249, 0.35) !important;
+}
+
+.badge-pos-default {
+  background-color: rgba(161, 161, 170, 0.12) !important;
+  color: #a1a1aa !important;
+  border-color: rgba(161, 161, 170, 0.35) !important;
+}
