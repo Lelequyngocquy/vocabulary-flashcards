@@ -4,8 +4,11 @@
 # =====================================================================
 $ErrorActionPreference = "Stop"
 
+$ROOT_DIR = Split-Path -Parent $PSScriptRoot
+Set-Location $ROOT_DIR
+
 $EC2_IP = "13.212.39.124"
-$PEM_KEY = "ubuntu02.pem"
+$PEM_KEY = Join-Path $ROOT_DIR "ubuntu02.pem"
 $IMAGE_NAME = "ielts-vocab-app:latest"
 $ARCHIVE_NAME = "ielts-vocab-app.tar.gz"
 

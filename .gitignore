@@ -6,6 +6,7 @@
 *.db-wal
 *.db-shm
 *.sqlite3
+backups/
 
 ### Next.js & Node
 node_modules/

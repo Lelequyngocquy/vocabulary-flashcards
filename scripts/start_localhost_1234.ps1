@@ -6,6 +6,9 @@ Param(
   [string]$Mode = "dev"
 )
 
+$ROOT_DIR = Split-Path -Parent $PSScriptRoot
+Set-Location $ROOT_DIR
+
 $PORT = 1234
 $URL = "http://localhost:$PORT"
 

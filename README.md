@@ -1,6 +1,6 @@
 # IELTS Vocab Mastery (VoltVocab v2.4)
 
-Ứng dụng học từ vựng IELTS phong cách kỹ thuật cao Voltagent Dark Theme, được xây dựng dưới dạng **Fullstack Next.js** (cả Frontend và Backend trong 1 dự án) tích hợp cơ sở dữ liệu **SQLite** và triển khai tối ưu bằng **Docker**.
+Ứng dụng học từ vựng IELTS phong cách kỹ thuật cao Voltagent Dark Theme, được xây dựng dưới dạng **Fullstack Next.js** (cả Frontend và Backend trong 1 dự án) tích hợp cơ sở dữ liệu **SQLite** cục bộ.
 
 ---
 
@@ -10,11 +10,11 @@
    - Backend Route Handlers (`/api/words`, `/api/auth/*`, `/api/progress`).
    - Server-Side Rendering (SSR) tải trực tiếp từ vựng từ SQLite với độ trễ 0ms.
 2. **Cơ sở dữ liệu SQLite**:
-   - Quản lý toàn bộ 1,265 từ vựng IELTS (`words`).
+   - Quản lý toàn bộ 1,265 từ vựng IELTS (`words`) với khóa chính tự tăng `id`.
    - Quản lý tài khoản người dùng (`users`) với mã hóa mật khẩu Scrypt an toàn.
-   - Đồng bộ tiến độ học tập (`progress`) theo thời gian thực giữa các thiết bị.
+   - Đồng bộ tiến độ học tập (`progress`) theo thời gian thực.
 3. **Frontend & Trải nghiệm học tập**:
-   - **Flashcards**: Lật thẻ 3D, cử chỉ vuốt Touch Swipe, phím tắt (Space, Mũi tên, S, M), phát âm câu ví dụ và copy.
+   - **Flashcards**: Lật thẻ 3D, cử chỉ vuốt Touch Swipe, phím tắt (Mũi tên xuống `↓` để lật, Trái/Phải để chuyển từ), phát âm và sao chép ví dụ.
    - **Quiz Engine**: Kiểm tra 4 lựa chọn (EN ➔ VI, VI ➔ EN, Mix), tính điểm streak và hiệu ứng Confetti.
    - **Dictionary**: Tìm kiếm từ vựng tức thời, lọc từ loại (noun, verb, adj, adv), lọc trạng thái Mastered/Learning.
    - **Metrics**: Thống kê tiến độ theo 20 Units, tùy chỉnh tốc độ giọng đọc Speech Velocity.
@@ -22,43 +22,62 @@
 
 ---
 
-## 🛠️ Lệnh làm việc cục bộ (Local Development)
+## 🛠️ Hướng dẫn cài đặt & Chạy Local
 
+### 1. Cài đặt thư viện:
 ```bash
-# Cài đặt thư viện
 npm install
+```
 
-# Nạp dữ liệu 1,265 từ vựng vào SQLite
+### 2. Nạp dữ liệu từ vựng vào SQLite:
+```bash
 npm run seed
+```
 
-# Chạy môi trường phát triển (Dev Server)
+### 3. Khởi chạy ứng dụng:
+
+#### Cách 1: Khởi chạy nhanh tại http://localhost:1234 (Khuyên dùng)
+```bash
+npm run local
+```
+Hoặc chạy trực tiếp script:
+- **Windows (CMD / Click đúp chuột)**: `.\scripts\start_localhost_1234.bat`
+- **PowerShell**: `.\scripts\start_localhost_1234.ps1`
+
+#### Cách 2: Khởi chạy môi trường phát triển mặc định (Port 3000)
+```bash
 npm run dev
-# Truy cập: http://localhost:3000
+# Mở trình duyệt tại: http://localhost:3000
+```
 
-# Kiểm tra biên dịch (Build)
+#### Cách 3: Biên dịch và chạy chế độ Production
+```bash
+# Biên dịch ứng dụng
 npm run build
+
+# Chạy bản production
+npm run start
 ```
 
 ---
 
-## 🚢 Quy trình Deploy an toàn lên VPS (Tránh Crash Ubuntu)
+## 📁 Cấu trúc thư mục dự án
 
-> [!IMPORTANT]
-> **Quy tắc quan trọng**: VPS EC2 có tài nguyên RAM hạn chế (~900 MB). Việc chạy `npm run build` hoặc biên dịch trên VPS có thể gây tràn RAM dẫn đến **Kernel OOM Crash** hoặc treo máy ảo.
-> 
-> Vì vậy, quy trình triển khai được thiết kế: **Build 100% tại máy Local -> Nén image -> Đẩy sang VPS -> VPS chỉ Load & Run runtime**.
-
-### Lệnh Deploy một chạm:
-
-```powershell
-npm run deploy
-# hoặc
-.\update_vps.ps1
+```text
+├── docs/                 # Tài liệu thiết kế và kiến trúc dự án
+│   ├── DESIGN-voltagent.md
+│   └── plan.md
+├── scripts/              # Các script hỗ trợ vận hành local
+│   ├── seed.js                  # Script nạp dữ liệu vào SQLite
+│   ├── words.sql                # Dữ liệu từ vựng thuần SQL (1,265 từ)
+│   ├── start_localhost_1234.bat # Script chạy nhanh localhost:1234 (CMD)
+│   └── start_localhost_1234.ps1 # Script chạy nhanh localhost:1234 (PowerShell)
+├── src/                  # Mã nguồn ứng dụng Next.js Fullstack
+│   ├── app/              # Next.js App Router & API Route Handlers
+│   ├── components/       # Các React components giao diện
+│   ├── lib/              # Tiện ích SQLite database, auth JWT, Web Audio
+│   └── types/            # TypeScript type definitions
+├── public/               # Tệp tĩnh công khai
+├── vocab.db              # Database SQLite cục bộ (git ignored)
+└── package.json          # Danh sách dependencies và npm scripts
 ```
-
-### Chi tiết các bước tự động trong script:
-1. **Local Build**: Docker tại máy local đóng gói image chuẩn `linux/amd64` với Next.js Standalone.
-2. **Nén siêu nhẹ**: Image được nén thành file `.tar.gz` chỉ còn ~87 MB.
-3. **Chuyển giao**: SCP file nén sang VPS EC2 (thời gian ~7 giây).
-4. **Nạp & Chạy**: VPS chỉ thực hiện `docker load` và `docker run` (không biên dịch, runtime chỉ tốn ~120 MB RAM).
-5. **Kiểm tra**: Kiểm tra phản hồi HTTP 200 trực tiếp từ domain `https://vocalnq.duckdns.org`.

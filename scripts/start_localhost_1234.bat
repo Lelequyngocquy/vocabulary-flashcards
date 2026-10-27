@@ -1,5 +1,6 @@
 @echo off
 title VoltVocab Next.js - Port 1234
+cd /d "%~dp0.."
 echo ==========================================================
 echo Starting VoltVocab at http://localhost:1234 ...
 echo ==========================================================
