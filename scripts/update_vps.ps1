@@ -38,30 +38,34 @@ Write-Host "==========================================================" -Foregro
 Write-Host ">>> 4. Deploying Next.js container on VPS..." -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 $remoteCommands = @"
-  echo '>>> Unpacking and loading image...'
+  echo '>>> 1. Backing up SQLite database on VPS...'
+  cp /home/ubuntu/ielts-data/vocab.db /home/ubuntu/ielts-data/vocab_backup_`$(date +%Y%m%d_%H%M%S).db 2>/dev/null || true
+
+  echo '>>> 2. Unpacking and loading Docker image...'
   tar -xzf /home/ubuntu/$ARCHIVE_NAME -O | docker load
   rm -f /home/ubuntu/$ARCHIVE_NAME
 
-  echo '>>> Stopping old container...'
+  echo '>>> 3. Stopping previous container...'
   docker stop ielts-vocab 2>/dev/null || true
   docker rm ielts-vocab 2>/dev/null || true
 
-  echo '>>> Launching Next.js container...'
+  echo '>>> 4. Launching Next.js container (1:N Hierarchical Architecture)...'
   docker run -d --name ielts-vocab -p 127.0.0.1:5000:80 -v /home/ubuntu/ielts-data:/data --restart always $IMAGE_NAME
 
-  echo '>>> Cleaning up dangling images...'
+  echo '>>> 5. Cleaning up dangling images...'
   docker image prune -f
 
   echo '>>> Container status:'
-  sleep 2
+  sleep 3
   docker ps
 "@
 
 ssh -i $PEM_KEY -o StrictHostKeyChecking=no ubuntu@${EC2_IP} $remoteCommands
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host ">>> 5. Verifying live web service..." -ForegroundColor Cyan
+Write-Host ">>> 5. Verifying live web service and API on VPS..." -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 ssh -i $PEM_KEY -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "curl -k -I https://127.0.0.1 -H 'Host: vocalnq.duckdns.org'"
+ssh -i $PEM_KEY -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "curl -s http://127.0.0.1:5000/api/words | head -c 200"
 
 Write-Host "`n>>> DEPLOYMENT SUCCESSFUL! Next.js is live at: https://vocalnq.duckdns.org" -ForegroundColor Green

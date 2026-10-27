@@ -34,13 +34,18 @@ export async function POST(request: Request) {
 
     const hashedPw = hashPassword(password);
     const user = createUser(username, hashedPw);
-    const token = createToken(user.id, user.username);
+    const userRole = user.role || (user.username.toLowerCase() === 'admin' ? 'ADMIN' : 'USER');
+    const isAdmin = userRole === 'ADMIN';
+    const token = createToken(user.id, user.username, userRole);
 
     return NextResponse.json({
       success: true,
       token,
       username: user.username,
+      role: userRole,
+      isAdmin,
       progress: {
+        current_category: 'Cambridge Vocabulary',
         current_unit: 'Unit 1: Growing Up',
         current_index: 0,
         learned_words: [],

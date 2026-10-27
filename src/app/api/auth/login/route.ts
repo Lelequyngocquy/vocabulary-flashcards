@@ -46,18 +46,23 @@ export async function POST(request: Request) {
     }
 
     const progressData = {
+      current_category: p?.current_category || 'Cambridge Vocabulary',
       current_unit: p ? p.current_unit : 'Unit 1: Growing Up',
       current_index: p ? p.current_index : 0,
       learned_words: learnedWords,
       quiz_stats: quizStats,
     };
 
-    const token = createToken(user.id, user.username);
+    const userRole = user.role || (user.username.toLowerCase() === 'admin' ? 'ADMIN' : 'USER');
+    const isAdmin = userRole === 'ADMIN' || user.username.toLowerCase() === 'admin';
+    const token = createToken(user.id, user.username, userRole);
 
     return NextResponse.json({
       success: true,
       token,
       username: user.username,
+      role: userRole,
+      isAdmin,
       progress: progressData,
     });
   } catch (error: unknown) {

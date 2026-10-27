@@ -35,6 +35,7 @@ export async function GET(request: Request) {
     }
 
     const progressData = {
+      current_category: p?.current_category || 'Cambridge Vocabulary',
       current_unit: p ? p.current_unit : 'Unit 1: Growing Up',
       current_index: p ? p.current_index : 0,
       learned_words: learnedWords,
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json().catch(() => ({}));
+    const currentCategory = data.current_category || 'Cambridge Vocabulary';
     const currentUnit = data.current_unit || 'Unit 1: Growing Up';
     const currentIndex = parseInt(String(data.current_index ?? 0), 10) || 0;
     const learnedWords = Array.isArray(data.learned_words) ? data.learned_words : [];
@@ -74,7 +76,7 @@ export async function POST(request: Request) {
     const learnedWordsJson = JSON.stringify(learnedWords);
     const quizStatsJson = JSON.stringify(quizStats);
 
-    upsertProgress(user.userId, currentUnit, currentIndex, learnedWordsJson, quizStatsJson);
+    upsertProgress(user.userId, currentCategory, currentUnit, currentIndex, learnedWordsJson, quizStatsJson);
 
     return NextResponse.json({
       success: true,

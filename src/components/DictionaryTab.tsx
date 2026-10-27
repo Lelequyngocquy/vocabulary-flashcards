@@ -8,27 +8,44 @@ import {
   speakText,
   getWordTypeBadgeClass,
 } from '@/lib/audio';
+import { EditWordModal } from '@/components/EditWordModal';
 
 interface DictionaryTabProps {
   words: WordItem[];
+  allWords?: WordItem[];
   currentUnit: string;
   learnedWords: Set<string>;
   onToggleLearned: (word: string) => void;
   isSoundMuted: boolean;
   speechRate: number;
+  categoriesList?: { id: number; category: string }[];
+  allTopicsList?: { name: string }[];
+  onWordUpdated?: (updatedWord: WordItem) => void;
+  isAdmin?: boolean;
+  authToken?: string | null;
+  onShowToast?: (msg: string, isError?: boolean) => void;
 }
 
 export const DictionaryTab: React.FC<DictionaryTabProps> = ({
   words,
+  allWords = [],
   currentUnit,
   learnedWords,
   onToggleLearned,
   isSoundMuted,
   speechRate,
+  categoriesList = [{ id: 1, category: 'Cambridge Vocabulary' }],
+  allTopicsList = [],
+  onWordUpdated,
+  isAdmin = false,
+  authToken = null,
+  onShowToast,
 }) => {
   const [search, setSearch] = useState('');
   const [posFilter, setPosFilter] = useState<PosFilterType>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('ALL');
+  const [editingWord, setEditingWord] = useState<WordItem | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const listContainerRef = useRef<HTMLDivElement>(null);
 
   // Filtered list
@@ -76,6 +93,27 @@ export const DictionaryTab: React.FC<DictionaryTabProps> = ({
     onToggleLearned(wordText);
   };
 
+  const handleOpenEdit = (w: WordItem) => {
+    playTapSound(isSoundMuted);
+    const isDefaultCat = !w.category || w.category === 'Cambridge Vocabulary';
+    if (isDefaultCat && !isAdmin) {
+      if (onShowToast) {
+        onShowToast('Kho từ vựng mặc định (Cambridge Vocabulary) chỉ có tài khoản Admin mới được chỉnh sửa.', true);
+      } else {
+        alert('Kho từ vựng mặc định (Cambridge Vocabulary) chỉ có tài khoản Admin mới được chỉnh sửa.');
+      }
+      return;
+    }
+    setEditingWord(w);
+    setIsEditModalOpen(true);
+  };
+
+  const handleWordUpdated = (updated: WordItem) => {
+    if (onWordUpdated) {
+      onWordUpdated(updated);
+    }
+  };
+
   return (
     <section id="tab-list" className="flex flex-col flex-1 w-full font-mono min-h-0 h-full overflow-hidden">
       {/* FIXED FILTER CARD */}
@@ -98,35 +136,27 @@ export const DictionaryTab: React.FC<DictionaryTabProps> = ({
 
         <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs">
           {/* POS filter pills */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 max-w-full">
-            {(['ALL', 'n', 'v', 'adj', 'adv'] as PosFilterType[]).map((pos) => {
-              const isSelected = posFilter === pos;
-              let styleClass = 'bg-canvas-soft text-body hover:text-ink border border-hairline';
-              if (isSelected) {
-                if (pos === 'ALL') {
-                  styleClass = 'bg-primary text-primary-on font-semibold';
-                } else {
-                  styleClass = `font-semibold border ${getWordTypeBadgeClass(pos)}`;
-                }
-              }
-              return (
-                <button
-                  key={pos}
-                  onClick={() => {
-                    playTapSound(isSoundMuted);
-                    setPosFilter(pos);
-                  }}
-                  className={`pos-filter-btn px-2 py-0.5 rounded-[4px] text-[11px] cursor-pointer transition-all ${styleClass}`}
-                  data-pos={pos}
-                >
-                  {pos === 'ALL' ? 'ALL' : pos === 'n' ? 'noun' : pos === 'v' ? 'verb' : pos}
-                </button>
-              );
-            })}
+          <div className="flex items-center gap-1 overflow-x-auto py-0.5 no-scrollbar">
+            {(['ALL', 'n', 'v', 'adj', 'adv'] as PosFilterType[]).map((pos) => (
+              <button
+                key={pos}
+                onClick={() => {
+                  playTapSound(isSoundMuted);
+                  setPosFilter(pos);
+                }}
+                className={`px-2 py-0.5 rounded-[4px] border text-[10px] font-mono uppercase transition-all cursor-pointer ${
+                  posFilter === pos
+                    ? 'bg-primary text-primary-on border-primary font-bold shadow-sm'
+                    : 'bg-canvas-soft text-mute border-hairline hover:text-ink hover:border-hairline-soft'
+                }`}
+              >
+                {pos}
+              </button>
+            ))}
           </div>
 
-          {/* Status filter buttons */}
-          <div className="flex items-center gap-0.5 bg-canvas-soft p-0.5 rounded-[4px] border border-hairline">
+          {/* Mastered/Learning Status filter toggle */}
+          <div className="flex items-center bg-canvas-soft p-0.5 rounded-[4px] border border-hairline font-mono">
             <button
               onClick={() => {
                 playTapSound(isSoundMuted);
@@ -144,7 +174,7 @@ export const DictionaryTab: React.FC<DictionaryTabProps> = ({
                 playTapSound(isSoundMuted);
                 setStatusFilter('UNLEARNED');
               }}
-              id="filterStatusUnlearned"
+              id="filterStatusLearning"
               className={`px-2 py-0.5 rounded-[2px] text-[10px] cursor-pointer transition-all ${
                 statusFilter === 'UNLEARNED' ? 'font-bold bg-canvas text-ink' : 'text-mute hover:text-ink'
               }`}
@@ -185,7 +215,7 @@ export const DictionaryTab: React.FC<DictionaryTabProps> = ({
             <p className="text-xs">// NO_MATCHING_RECORDS_FOUND</p>
           </div>
         ) : (
-          filteredList.map((w, idx) => {
+          filteredList.map((w) => {
             const isMastered = learnedWords.has(w.word);
             const badgeClass = getWordTypeBadgeClass(w.type);
 
@@ -194,8 +224,8 @@ export const DictionaryTab: React.FC<DictionaryTabProps> = ({
                 key={w.id}
                 className="bg-canvas p-3 rounded-[6px] border border-hairline flex items-start justify-between gap-2.5 hover:border-hairline-soft transition-all"
               >
-                <div className="flex-1 space-y-0.5">
-                  <div className="flex items-center gap-1.5 font-mono">
+                <div className="flex-1 space-y-0.5 min-w-0 pr-1">
+                  <div className="flex items-center gap-1.5 font-mono flex-wrap">
                     <span className="font-sans font-medium text-sm text-ink-strong">{w.word}</span>
                     <span className={`text-[9px] px-1.5 py-0.2 rounded border uppercase font-mono font-medium ${badgeClass}`}>
                       {w.type || 'vocab'}
@@ -216,22 +246,56 @@ export const DictionaryTab: React.FC<DictionaryTabProps> = ({
                   )}
                 </div>
 
-                <button
-                  onClick={() => handleToggle(w.word)}
-                  className={`p-2 rounded-[4px] transition-all tap-bounce font-mono text-[11px] cursor-pointer ${
-                    isMastered
-                      ? 'bg-canvas-soft text-primary border border-primary'
-                      : 'bg-canvas-soft text-mute border border-hairline hover:text-ink'
-                  }`}
-                  title={isMastered ? 'Mastered' : 'Mark Mastered'}
-                >
-                  {isMastered ? '●' : '○'}
-                </button>
+                {/* Action Buttons: Setting / Edit + Mark Mastered */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => handleOpenEdit(w)}
+                    className="p-2 rounded-[4px] bg-canvas-soft hover:bg-canvas text-mute hover:text-primary border border-hairline hover:border-primary/50 transition-all tap-bounce cursor-pointer flex items-center justify-center"
+                    title="Edit Word, Topic & Category"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => handleToggle(w.word)}
+                    className={`p-2 rounded-[4px] transition-all tap-bounce font-mono text-[11px] cursor-pointer ${
+                      isMastered
+                        ? 'bg-canvas-soft text-primary border border-primary'
+                        : 'bg-canvas-soft text-mute border border-hairline hover:text-ink'
+                    }`}
+                    title={isMastered ? 'Mastered' : 'Mark Mastered'}
+                  >
+                    {isMastered ? '●' : '○'}
+                  </button>
+                </div>
               </div>
             );
           })
         )}
       </div>
+
+      {/* Edit Word Modal */}
+      {isEditModalOpen && (
+        <EditWordModal
+          word={editingWord}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onWordUpdated={handleWordUpdated}
+          categoriesList={categoriesList}
+          allWords={allWords.length > 0 ? allWords : words}
+          isSoundMuted={isSoundMuted}
+          isAdmin={isAdmin}
+          authToken={authToken}
+        />
+      )}
     </section>
   );
 };

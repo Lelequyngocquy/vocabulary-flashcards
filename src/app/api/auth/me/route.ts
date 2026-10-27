@@ -35,6 +35,7 @@ export async function GET(request: Request) {
     }
 
     const progressData = {
+      current_category: p?.current_category || 'Cambridge Vocabulary',
       current_unit: p ? p.current_unit : 'Unit 1: Growing Up',
       current_index: p ? p.current_index : 0,
       learned_words: learnedWords,
@@ -45,6 +46,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       username: user.username,
+      role: user.role,
+      isAdmin: user.isAdmin,
       progress: progressData,
     });
   } catch (error: unknown) {

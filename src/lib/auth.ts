@@ -50,10 +50,18 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   }
 }
 
-export function createToken(userId: number, username: string): string {
+export interface AuthUser {
+  userId: number;
+  username: string;
+  role: string;
+  isAdmin: boolean;
+}
+
+export function createToken(userId: number, username: string, role = 'USER'): string {
   const payload = {
     user_id: userId,
     username: username,
+    role: role || (username.toLowerCase() === 'admin' ? 'ADMIN' : 'USER'),
   };
   return jwt.sign(payload, JWT_SECRET, {
     algorithm: 'HS256',
@@ -61,16 +69,21 @@ export function createToken(userId: number, username: string): string {
   });
 }
 
-export function verifyToken(token: string): { userId: number; username: string } | null {
+export function verifyToken(token: string): AuthUser | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as {
       user_id: number;
       username: string;
+      role?: string;
     };
     if (decoded && decoded.user_id && decoded.username) {
+      const username = decoded.username;
+      const role = decoded.role || (username.toLowerCase() === 'admin' ? 'ADMIN' : 'USER');
       return {
         userId: decoded.user_id,
-        username: decoded.username,
+        username,
+        role,
+        isAdmin: role === 'ADMIN' || username.toLowerCase() === 'admin',
       };
     }
     return null;
@@ -79,7 +92,7 @@ export function verifyToken(token: string): { userId: number; username: string }
   }
 }
 
-export function getUserFromRequest(request: Request): { userId: number; username: string } | null {
+export function getUserFromRequest(request: Request): AuthUser | null {
   const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;

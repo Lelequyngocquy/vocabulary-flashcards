@@ -14,6 +14,7 @@ node_modules/
 out/
 .env*
 !.env.example
+*.tsbuildinfo
 
 ### Python
 # Byte-compiled files

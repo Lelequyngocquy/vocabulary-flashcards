@@ -5,6 +5,9 @@ import { TabType } from '@/types';
 import { playTapSound } from '@/lib/audio';
 
 interface HeaderProps {
+  currentCategory: string;
+  categoriesList: { id: number; category: string; display_order?: number }[];
+  onCategoryChange: (category: string) => void;
   currentUnit: string;
   unitsList: { name: string; count: number }[];
   onUnitChange: (unit: string) => void;
@@ -19,6 +22,9 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  currentCategory,
+  categoriesList,
+  onCategoryChange,
   currentUnit,
   unitsList,
   onUnitChange,
@@ -74,29 +80,70 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Unit Selector Dropdown */}
-        <div className="flex-1 min-w-0 max-w-[210px] sm:max-w-xs md:max-w-sm mx-1">
-          <div className="relative">
-            <select
-              id="unitSelect"
-              value={currentUnit}
-              onChange={(e) => {
-                playTapSound(isSoundMuted);
-                onUnitChange(e.target.value);
-              }}
-              className="w-full bg-canvas-soft hover:bg-canvas text-ink text-xs sm:text-sm font-medium rounded-[6px] border border-hairline px-2.5 py-1.5 pr-6 focus:outline-none focus:border-primary transition-all cursor-pointer appearance-none truncate font-sans"
-            >
-              <option value="ALL">All Units ({totalWords.toLocaleString()} words)</option>
-              {unitsList.map((u) => (
-                <option key={u.name} value={u.name}>
-                  {u.name} ({u.count})
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-mute">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
+        {/* Coordinated Category & Topic Filters */}
+        <div className="flex-1 min-w-0 max-w-[230px] xs:max-w-[270px] sm:max-w-xs md:max-w-sm mx-1 flex items-center gap-1.5">
+          {/* 1. Category Selector */}
+          <div className="w-1/2 min-w-0 relative">
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-primary">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <select
+                id="categorySelect"
+                value={currentCategory}
+                onChange={(e) => {
+                  playTapSound(isSoundMuted);
+                  onCategoryChange(e.target.value);
+                }}
+                title="Select Category"
+                className="w-full bg-canvas-soft hover:bg-canvas text-ink text-xs font-medium rounded-[6px] border border-hairline pl-6 sm:pl-7 pr-5 sm:pr-6 py-1.5 focus:outline-none focus:border-primary transition-all cursor-pointer appearance-none truncate font-sans"
+              >
+                {categoriesList.map((c) => (
+                  <option key={c.category} value={c.category}>
+                    {c.category}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-mute">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Topic / Unit Selector */}
+          <div className="w-1/2 min-w-0 relative">
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-mute">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <select
+                id="unitSelect"
+                value={currentUnit}
+                onChange={(e) => {
+                  playTapSound(isSoundMuted);
+                  onUnitChange(e.target.value);
+                }}
+                title="Select Topic"
+                className="w-full bg-canvas-soft hover:bg-canvas text-ink text-xs font-medium rounded-[6px] border border-hairline pl-6 sm:pl-7 pr-5 sm:pr-6 py-1.5 focus:outline-none focus:border-primary transition-all cursor-pointer appearance-none truncate font-sans"
+              >
+                <option value="ALL">All Topics ({totalWords.toLocaleString()})</option>
+                {unitsList.map((u) => (
+                  <option key={u.name} value={u.name}>
+                    {u.name} ({u.count})
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-mute">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>

@@ -9,7 +9,7 @@ interface AuthModalProps {
   onClose: () => void;
   onOpenForgotPass: () => void;
   isSoundMuted: boolean;
-  onAuthSuccess: (token: string, username: string, progress?: UserProgress) => void;
+  onAuthSuccess: (token: string, username: string, progress?: UserProgress, role?: string) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -44,7 +44,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
       if (data.success && data.token) {
         playChimeSound(isSoundMuted);
-        onAuthSuccess(data.token, data.username, data.progress);
+        onAuthSuccess(data.token, data.username, data.progress, data.role);
         onClose();
       } else {
         setErrorMsg(data.error || 'Authentication failed.');
