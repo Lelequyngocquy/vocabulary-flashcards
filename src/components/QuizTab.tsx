@@ -146,7 +146,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
   const accuracyPct = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
 
   return (
-    <section id="tab-quiz" className="flex flex-col flex-1 w-full justify-start space-y-4">
+    <section id="tab-quiz" className="flex flex-col flex-1 w-full justify-start space-y-3 min-h-0 overflow-y-auto pb-4">
       {/* INTRO SCREEN */}
       {viewState === 'intro' && (
         <div id="quizIntro" className="bg-canvas rounded-[8px] p-6 border border-hairline text-center space-y-4 my-auto">

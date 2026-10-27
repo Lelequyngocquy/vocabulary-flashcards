@@ -262,7 +262,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
         return;
       }
 
-      if (e.code === 'Space') {
+      if (e.code === 'ArrowDown' || e.code === 'Space') {
         e.preventDefault();
         handleFlip();
       } else if (e.code === 'ArrowRight') {
@@ -340,9 +340,9 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
   const progressPct = words.length > 0 ? Math.round(((currentIndex + 1) / words.length) * 100) : 100;
 
   return (
-    <section id="tab-flashcards" className="flex flex-col flex-1 w-full justify-between">
+    <section id="tab-flashcards" className="flex flex-col flex-1 w-full justify-between h-full min-h-0">
       {/* Top Eyebrow & Metric Progress Bar */}
-      <div className="mb-3">
+      <div className="mb-2 sm:mb-3 flex-shrink-0">
         <div className="flex items-center justify-between text-xs font-mono mb-1.5">
           <span id="fcUnitTitle" className="truncate max-w-[220px] sm:max-w-xs text-primary font-semibold tracking-wide">
             {currentUnit === 'ALL' ? 'All 20 Units' : currentUnit}
@@ -364,7 +364,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
       <div
         id="flashcardWrapper"
         ref={wrapperRef}
-        className={`perspective-1000 w-full min-h-[320px] sm:min-h-[360px] select-none cursor-pointer my-auto ${slideAnim}`}
+        className={`perspective-1000 w-full min-h-[260px] sm:min-h-[340px] flex-1 max-h-[440px] select-none cursor-pointer my-auto ${slideAnim}`}
         onClick={handleFlip}
       >
         {words.length === 0 ? (
@@ -439,9 +439,9 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               </div>
 
               {/* Front Bottom Eyebrow */}
-              <div className="text-center text-xs sm:text-sm text-mute flex items-center justify-center gap-1.5 font-mono uppercase tracking-[2.52px] pt-3 border-t border-hairline/60">
+              <div className="text-center text-[11px] sm:text-xs text-mute flex items-center justify-center gap-1.5 font-mono uppercase tracking-[1.5px] sm:tracking-[2px] pt-2 border-t border-hairline/60">
                 <span className="text-primary text-sm font-bold">➔</span>
-                <span>CHẠM ĐỂ XEM ĐỊNH NGHĨA</span>
+                <span>CHẠM HOẶC [↓] ĐỂ LẬT • VUỐT ĐỂ CHUYỂN TỪ</span>
               </div>
             </div>
 
@@ -544,9 +544,9 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               </div>
 
               {/* Back Bottom Eyebrow */}
-              <div className="text-center text-xs sm:text-sm text-mute flex items-center justify-center gap-1.5 font-mono uppercase tracking-[2.52px] pt-2.5 border-t border-hairline/60">
+              <div className="text-center text-[11px] sm:text-xs text-mute flex items-center justify-center gap-1.5 font-mono uppercase tracking-[1.5px] sm:tracking-[2px] pt-2 border-t border-hairline/60">
                 <span className="text-primary text-sm font-bold">➔</span>
-                <span>CHẠM ĐỂ QUAY LẠI TỪ VỰNG</span>
+                <span>CHẠM HOẶC [↓] ĐỂ QUAY LẠI TỪ VỰNG</span>
               </div>
             </div>
           </div>
@@ -554,13 +554,13 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
       </div>
 
       {/* Controls Row */}
-      <div className="mt-5 sm:mt-7 flex flex-col gap-3.5 sm:gap-4">
+      <div className="mt-3 sm:mt-5 flex flex-col gap-2.5 sm:gap-3 flex-shrink-0">
         {/* Full-width Pronounce Button */}
         <div>
           <button
             onClick={handleSpeakCurrent}
             id="fcAudioBtn"
-            className="w-full py-3 px-4 rounded-[8px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs sm:text-sm min-h-[48px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono uppercase tracking-wider cursor-pointer"
+            className="w-full py-2.5 sm:py-3 px-4 rounded-[8px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono uppercase tracking-wider cursor-pointer"
           >
             <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
               <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
@@ -577,42 +577,12 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
           </button>
         </div>
 
-        {/* Navigation Buttons: < PREV, FLIP, NEXT > */}
-        <div className="grid grid-cols-3 gap-3.5 sm:gap-4 font-mono text-xs sm:text-sm">
-          <button
-            onClick={() => {
-              playTapSound(isSoundMuted);
-              handlePrev();
-            }}
-            className="flex items-center justify-center gap-1.5 py-3 px-3 sm:px-4 rounded-[8px] bg-canvas hover:bg-canvas-soft border border-hairline text-ink font-semibold min-h-[48px] transition-all tap-bounce cursor-pointer"
-          >
-            <span>&lt; PREV</span>
-          </button>
-
-          <button
-            onClick={handleFlip}
-            className="flex items-center justify-center gap-1.5 py-3 px-3 sm:px-4 rounded-[8px] bg-canvas hover:bg-canvas-soft border-2 border-primary text-primary font-bold min-h-[48px] transition-all tap-bounce cursor-pointer"
-          >
-            <span>FLIP</span>
-          </button>
-
-          <button
-            onClick={() => {
-              playTapSound(isSoundMuted);
-              handleNext();
-            }}
-            className="flex items-center justify-center gap-1.5 py-3 px-3 sm:px-4 rounded-[8px] bg-canvas hover:bg-canvas-soft border border-hairline text-ink font-semibold min-h-[48px] transition-all tap-bounce cursor-pointer"
-          >
-            <span>NEXT &gt;</span>
-          </button>
-        </div>
-
         {/* Status & Auxiliary Actions: MARK MASTERED, Incomplete, SHUFFLE */}
-        <div className="flex items-center justify-between gap-2.5 sm:gap-3 text-xs sm:text-sm font-mono">
+        <div className="flex items-center justify-between gap-2 sm:gap-2.5 text-xs sm:text-sm font-mono">
           <button
             onClick={handleToggleLearned}
             id="fcToggleLearnedAction"
-            className={`flex-1 py-3 px-3 rounded-[8px] min-h-[46px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono cursor-pointer ${
+            className={`flex-1 py-2.5 sm:py-3 px-3 rounded-[8px] min-h-[44px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono cursor-pointer ${
               isLearned
                 ? 'bg-canvas-soft border border-primary text-primary font-semibold'
                 : 'bg-canvas hover:bg-canvas-soft border border-hairline text-ink'
@@ -632,7 +602,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               onToggleFilterIncomplete();
             }}
             id="btnFilterIncomplete"
-            className={`py-3 px-3.5 rounded-[8px] min-h-[46px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono text-xs sm:text-sm cursor-pointer ${
+            className={`py-2.5 sm:py-3 px-3 rounded-[8px] min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono text-xs sm:text-sm cursor-pointer ${
               filterOnlyIncomplete
                 ? 'bg-primary/15 hover:bg-primary/25 border border-primary text-primary font-semibold'
                 : 'bg-canvas hover:bg-canvas-soft border border-hairline text-body'
@@ -651,7 +621,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               onToggleShuffle();
             }}
             id="btnShuffle"
-            className={`py-3 px-3.5 rounded-[8px] border min-h-[46px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono cursor-pointer ${
+            className={`py-2.5 sm:py-3 px-3 rounded-[8px] border min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono cursor-pointer ${
               isShuffled
                 ? 'bg-primary text-primary-on border-primary font-semibold'
                 : 'bg-canvas hover:bg-canvas-soft border-hairline text-body'

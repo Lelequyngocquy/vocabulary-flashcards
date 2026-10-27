@@ -361,7 +361,7 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
         onLogout={handleLogout}
       />
 
-      <main className="flex-1 max-w-xl w-full mx-auto p-3 sm:p-5 flex flex-col justify-start">
+      <main className="flex-1 max-w-xl w-full mx-auto px-3 sm:px-5 pt-2 pb-24 md:pb-5 flex flex-col justify-start min-h-0 overflow-hidden">
         {activeTab === 'flashcards' && (
           <FlashcardTab
             words={filteredWords}

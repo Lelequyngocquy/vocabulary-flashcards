@@ -31,7 +31,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
   const totalPercentage = totalWords > 0 ? Math.round((masteredCount / totalWords) * 100) : 0;
 
   return (
-    <section id="tab-stats" className="flex flex-col flex-1 w-full space-y-4 font-mono">
+    <section id="tab-stats" className="flex flex-col flex-1 w-full space-y-3 font-mono min-h-0 overflow-y-auto pr-1 pb-4">
       {/* SYSTEM METRICS */}
       <div className="bg-canvas rounded-[8px] p-5 border border-hairline">
         <div className="text-[10px] text-mute uppercase tracking-[2.52px] mb-1">SYSTEM METRICS</div>
