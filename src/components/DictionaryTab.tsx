@@ -191,7 +191,7 @@ export const DictionaryTab: React.FC<DictionaryTabProps> = ({
 
             return (
               <div
-                key={idx}
+                key={w.id}
                 className="bg-canvas p-3 rounded-[6px] border border-hairline flex items-start justify-between gap-2.5 hover:border-hairline-soft transition-all"
               >
                 <div className="flex-1 space-y-0.5">

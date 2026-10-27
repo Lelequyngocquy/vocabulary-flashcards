@@ -49,34 +49,16 @@ const countRow = db.prepare('SELECT COUNT(*) as count FROM words').get();
 console.log(`Current words count in DB: ${countRow.count}`);
 
 if (countRow.count === 0) {
-  const jsonPath = path.join(process.cwd(), 'database.json');
-  if (fs.existsSync(jsonPath)) {
-    const words = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
-    console.log(`Seeding ${words.length} words from database.json...`);
-
-    const insert = db.prepare(`
-      INSERT INTO words (word, type, meaning, example, library)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    const insertMany = db.transaction((items) => {
-      for (const item of items) {
-        insert.run(
-          item.word || '',
-          item.type || '',
-          item.meaning || '',
-          item.example || '',
-          item.library || 'General'
-        );
-      }
-    });
-
-    insertMany(words);
+  const sqlPath = path.join(__dirname, 'words.sql');
+  if (fs.existsSync(sqlPath)) {
+    console.log(`Seeding words from pure SQL (${sqlPath})...`);
+    const sql = fs.readFileSync(sqlPath, 'utf-8');
+    db.exec(sql);
 
     const finalCount = db.prepare('SELECT COUNT(*) as count FROM words').get();
     console.log(`Seeding complete! Total words in SQLite: ${finalCount.count}`);
   } else {
-    console.warn(`database.json not found at ${jsonPath}`);
+    console.warn(`words.sql not found at ${sqlPath}`);
   }
 } else {
   console.log('Database already contains words. Skipping seed.');

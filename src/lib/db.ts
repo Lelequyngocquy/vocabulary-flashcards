@@ -94,7 +94,7 @@ function getDb(): DatabaseAdapter {
     CREATE INDEX IF NOT EXISTS idx_words_word ON words(word);
   `);
 
-  // Auto-seed words from database.json if words table is empty
+  // Auto-seed words from scripts/words.sql if words table is empty
   seedWordsIfEmpty(dbInstance);
 
   return dbInstance;
@@ -106,38 +106,19 @@ function seedWordsIfEmpty(db: DatabaseAdapter) {
     const count = row?.count ?? 0;
 
     if (count === 0) {
-      // Find JSON file to seed from
-      const possiblePaths = [
-        path.join(process.cwd(), 'database.json'),
-        path.join(process.cwd(), 'src', 'data', 'words.json'),
+      const sqlPaths = [
+        path.join(process.cwd(), 'scripts', 'words.sql'),
+        path.join(__dirname, '..', '..', 'scripts', 'words.sql'),
+        '/app/scripts/words.sql',
       ];
 
-      let seedData: WordItem[] | null = null;
-      for (const p of possiblePaths) {
+      for (const p of sqlPaths) {
         if (fs.existsSync(p)) {
-          const raw = fs.readFileSync(p, 'utf-8');
-          seedData = JSON.parse(raw);
+          console.log(`[SQLite] Seeding words from pure SQL: ${p}`);
+          const sql = fs.readFileSync(p, 'utf-8');
+          db.exec(sql);
           break;
         }
-      }
-
-      if (seedData && Array.isArray(seedData) && seedData.length > 0) {
-        db.exec('BEGIN TRANSACTION;');
-        const insertStmt = db.prepare(`
-          INSERT OR IGNORE INTO words (word, type, meaning, example, library)
-          VALUES (?, ?, ?, ?, ?)
-        `);
-
-        for (const item of seedData) {
-          insertStmt.run(
-            item.word || '',
-            item.type || '',
-            item.meaning || '',
-            item.example || '',
-            item.library || 'General'
-          );
-        }
-        db.exec('COMMIT;');
       }
     }
   } catch (err) {
@@ -149,14 +130,20 @@ function seedWordsIfEmpty(db: DatabaseAdapter) {
 
 export function getAllWords(): WordItem[] {
   const db = getDb();
-  const rows = db.prepare('SELECT word, type, meaning, example, library FROM words ORDER BY id ASC').all();
+  const rows = db.prepare('SELECT id, word, type, meaning, example, library, created_at FROM words ORDER BY id ASC').all();
   return (rows as WordItem[]) || [];
 }
 
 export function getWordsByLibrary(library: string): WordItem[] {
   const db = getDb();
-  const rows = db.prepare('SELECT word, type, meaning, example, library FROM words WHERE library = ? ORDER BY id ASC').all(library);
+  const rows = db.prepare('SELECT id, word, type, meaning, example, library, created_at FROM words WHERE library = ? ORDER BY id ASC').all(library);
   return (rows as WordItem[]) || [];
+}
+
+export function getWordById(id: number): WordItem | null {
+  const db = getDb();
+  const row = db.prepare('SELECT id, word, type, meaning, example, library, created_at FROM words WHERE id = ?').get(id);
+  return (row as WordItem) || null;
 }
 
 export function getUnitsBreakdown(): { name: string; count: number }[] {
@@ -165,13 +152,42 @@ export function getUnitsBreakdown(): { name: string; count: number }[] {
   return (rows as { name: string; count: number }[]) || [];
 }
 
-export function addWord(word: WordItem): void {
+export function addWord(word: Omit<WordItem, 'id' | 'created_at'>): WordItem {
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT OR REPLACE INTO words (word, type, meaning, example, library)
+    INSERT INTO words (word, type, meaning, example, library)
     VALUES (?, ?, ?, ?, ?)
   `);
-  stmt.run(word.word, word.type, word.meaning, word.example, word.library);
+  const result = stmt.run(word.word, word.type || '', word.meaning, word.example || '', word.library);
+  const newId = Number(result.lastInsertRowid);
+  return getWordById(newId)!;
+}
+
+export function updateWord(id: number, data: Partial<Omit<WordItem, 'id' | 'created_at'>>): boolean {
+  const db = getDb();
+  const existing = getWordById(id);
+  if (!existing) return false;
+
+  const word = data.word ?? existing.word;
+  const type = data.type ?? existing.type;
+  const meaning = data.meaning ?? existing.meaning;
+  const example = data.example ?? existing.example;
+  const library = data.library ?? existing.library;
+
+  const stmt = db.prepare(`
+    UPDATE words
+    SET word = ?, type = ?, meaning = ?, example = ?, library = ?
+    WHERE id = ?
+  `);
+  const result = stmt.run(word, type, meaning, example, library, id);
+  return (result.changes ?? 0) > 0;
+}
+
+export function deleteWord(id: number): boolean {
+  const db = getDb();
+  const stmt = db.prepare('DELETE FROM words WHERE id = ?');
+  const result = stmt.run(id);
+  return (result.changes ?? 0) > 0;
 }
 
 /* ==================== USER AUTH QUERIES ==================== */

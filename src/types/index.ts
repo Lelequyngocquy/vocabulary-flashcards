@@ -1,9 +1,11 @@
 export interface WordItem {
+  id: number;
   word: string;
   type: string;
   meaning: string;
   example: string;
   library: string;
+  created_at?: string;
 }
 
 export interface UserProgress {
