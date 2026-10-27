@@ -32,25 +32,25 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     setErrorMsg('');
 
     if (!currentPassword) {
-      setErrorMsg('Vui lòng nhập mật khẩu hiện tại.');
+      setErrorMsg('Please enter your current password.');
       playErrorSound(isSoundMuted);
       return;
     }
 
     if (!newPassword || newPassword.length < 6) {
-      setErrorMsg('Mật khẩu mới phải có ít nhất 6 ký tự.');
+      setErrorMsg('New password must be at least 6 characters.');
       playErrorSound(isSoundMuted);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMsg('Xác nhận mật khẩu mới không trùng khớp.');
+      setErrorMsg('Password confirmation does not match.');
       playErrorSound(isSoundMuted);
       return;
     }
 
     if (currentPassword === newPassword) {
-      setErrorMsg('Mật khẩu mới không được trùng với mật khẩu cũ.');
+      setErrorMsg('New password must differ from current password.');
       playErrorSound(isSoundMuted);
       return;
     }
@@ -71,17 +71,17 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
       if (data.success) {
         playChimeSound(isSoundMuted);
-        onSuccess(data.message || 'Mật khẩu đã được đổi thành công!');
+        onSuccess(data.message || 'Password updated successfully!');
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
         onClose();
       } else {
-        setErrorMsg(data.error || 'Đổi mật khẩu thất bại.');
+        setErrorMsg(data.error || 'Password update failed.');
         playErrorSound(isSoundMuted);
       }
     } catch {
-      setErrorMsg('Lỗi kết nối máy chủ. Vui lòng thử lại sau.');
+      setErrorMsg('Server connection error. Please try again.');
       playErrorSound(isSoundMuted);
     } finally {
       setLoading(false);
@@ -117,10 +117,10 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <span>SECURITY_UPDATE</span>
           </div>
           <h2 className="text-xl font-medium text-ink-strong tracking-tight font-sans">
-            Đổi mật khẩu
+            Change Password
           </h2>
           <p className="text-xs text-body mt-0.5 font-sans">
-            Cập nhật mật khẩu mới cho tài khoản của bạn.
+            Update your account security credentials.
           </p>
         </div>
 
@@ -136,7 +136,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-3 font-mono">
           <div>
             <label className="text-[10px] text-mute uppercase tracking-widest block mb-1">
-              MẬT KHẨU HIỆN TẠI
+              CURRENT PASSWORD
             </label>
             <input
               type={showPasswords ? 'text' : 'password'}
@@ -150,7 +150,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
           <div>
             <label className="text-[10px] text-mute uppercase tracking-widest block mb-1">
-              MẬT KHẨU MỚI (TỐI THIỂU 6 KÝ TỰ)
+              NEW PASSWORD (MIN 6 CHARACTERS)
             </label>
             <input
               type={showPasswords ? 'text' : 'password'}
@@ -165,7 +165,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
           <div>
             <label className="text-[10px] text-mute uppercase tracking-widest block mb-1">
-              XÁC NHẬN MẬT KHẨU MỚI
+              CONFIRM NEW PASSWORD
             </label>
             <input
               type={showPasswords ? 'text' : 'password'}
@@ -191,7 +191,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               htmlFor="showPassToggle"
               className="text-[11px] text-mute select-none cursor-pointer"
             >
-              Hiển thị mật khẩu
+              Show passwords
             </label>
           </div>
 
@@ -205,14 +205,14 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               }}
               className="flex-1 py-2.5 rounded-[6px] bg-canvas-soft hover:bg-canvas border border-hairline text-mute hover:text-ink text-xs font-semibold tap-bounce transition-colors cursor-pointer"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 py-2.5 rounded-[6px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs tracking-wider tap-bounce transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'ĐANG LƯU...' : 'CẬP NHẬT ➔'}
+              {loading ? 'UPDATING...' : 'CONFIRM UPDATE ➔'}
             </button>
           </div>
         </form>

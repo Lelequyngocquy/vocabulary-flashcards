@@ -108,7 +108,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
           <div className="flex items-center justify-between font-mono">
             <div>
               <p className="text-xs text-ink font-semibold">SOUND_EFFECTS</p>
-              <p className="text-[10px] text-mute font-sans">Hiệu ứng âm thanh khi lật thẻ, làm quiz và tương tác.</p>
+              <p className="text-[10px] text-mute font-sans">Synthesized audio for card flips, quiz telemetry, and UI taps.</p>
             </div>
             <button
               onClick={onToggleSound}

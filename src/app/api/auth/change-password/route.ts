@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const user = getUserFromRequest(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Chưa đăng nhập hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.' },
+        { success: false, error: 'Unauthorized: Session expired or invalid. Please log in again.' },
         { status: 401 }
       );
     }
@@ -19,21 +19,21 @@ export async function POST(request: Request) {
 
     if (!currentPassword || !newPassword) {
       return NextResponse.json(
-        { success: false, error: 'Vui lòng cung cấp đầy đủ mật khẩu hiện tại và mật khẩu mới.' },
+        { success: false, error: 'Please provide both current password and new password.' },
         { status: 400 }
       );
     }
 
     if (typeof newPassword !== 'string' || newPassword.length < 6) {
       return NextResponse.json(
-        { success: false, error: 'Mật khẩu mới phải có độ dài tối thiểu từ 6 ký tự.' },
+        { success: false, error: 'New password must be at least 6 characters.' },
         { status: 400 }
       );
     }
 
     if (currentPassword === newPassword) {
       return NextResponse.json(
-        { success: false, error: 'Mật khẩu mới không được trùng với mật khẩu hiện tại.' },
+        { success: false, error: 'New password must differ from current password.' },
         { status: 400 }
       );
     }
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const userRecord = findUserById(user.userId);
     if (!userRecord) {
       return NextResponse.json(
-        { success: false, error: 'Không tìm thấy thông tin tài khoản người dùng.' },
+        { success: false, error: 'User account not found.' },
         { status: 404 }
       );
     }
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     const isMatch = verifyPassword(currentPassword, userRecord.password_hash);
     if (!isMatch) {
       return NextResponse.json(
-        { success: false, error: 'Mật khẩu hiện tại không chính xác. Vui lòng thử lại.' },
+        { success: false, error: 'Incorrect current password. Please try again.' },
         { status: 400 }
       );
     }
@@ -59,19 +59,19 @@ export async function POST(request: Request) {
 
     if (!updated) {
       return NextResponse.json(
-        { success: false, error: 'Không thể cập nhật mật khẩu vào cơ sở dữ liệu. Vui lòng thử lại.' },
+        { success: false, error: 'Failed to update password in database. Please try again.' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Đổi mật khẩu thành công!',
+      message: 'Password changed successfully!',
     });
   } catch (error: unknown) {
     const err = error as Error;
     return NextResponse.json(
-      { success: false, error: `Lỗi hệ thống: ${err.message || 'Unknown'}` },
+      { success: false, error: `System error: ${err.message || 'Unknown'}` },
       { status: 500 }
     );
   }

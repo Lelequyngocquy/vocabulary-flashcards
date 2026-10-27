@@ -729,10 +729,10 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                 <span>FLASHCARD_FILTERS</span>
               </div>
               <h2 className="text-xl font-medium text-ink-strong tracking-tight font-sans">
-                Tùy chọn bộ lọc
+                Filter & Display Options
               </h2>
               <p className="text-xs text-body mt-0.5 font-sans">
-                Lọc danh sách và tùy biến trải nghiệm học tập
+                Configure study mode and word card filtering
               </p>
             </div>
 
@@ -763,14 +763,14 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="font-sans font-medium text-xs sm:text-sm text-ink-strong">
-                        Chỉ từ chưa thuộc
+                        Incomplete Words Only
                       </span>
                       <span className="text-[10px] text-mute uppercase font-mono">
-                        (Incomplete)
+                        (Unmastered)
                       </span>
                     </div>
                     <p className="text-[11px] text-mute font-sans mt-0.5">
-                      Ẩn những từ đã đánh dấu Mastered
+                      Hide terms already marked as Mastered
                     </p>
                   </div>
                 </div>
@@ -811,14 +811,14 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="font-sans font-medium text-xs sm:text-sm text-ink-strong">
-                        Xáo trộn ngẫu nhiên
+                        Shuffle Flashcards
                       </span>
                       <span className="text-[10px] text-mute uppercase font-mono">
-                        (Shuffle)
+                        (Randomize)
                       </span>
                     </div>
                     <p className="text-[11px] text-mute font-sans mt-0.5">
-                      Đảo ngẫu nhiên vị trí các thẻ từ
+                      Randomize the study order of flashcards
                     </p>
                   </div>
                 </div>
@@ -847,7 +847,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                   }}
                   className="py-2.5 px-3 rounded-[6px] bg-canvas-soft hover:bg-canvas border border-hairline text-rose-400 hover:text-rose-300 text-xs font-semibold tap-bounce transition-colors cursor-pointer"
                 >
-                  Đặt lại
+                  Reset All
                 </button>
               )}
               <button
@@ -858,7 +858,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                 }}
                 className="flex-1 py-2.5 rounded-[6px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs tracking-wider tap-bounce transition-colors cursor-pointer text-center"
               >
-                XONG
+                DONE
               </button>
             </div>
           </div>
