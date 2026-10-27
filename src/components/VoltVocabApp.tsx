@@ -223,15 +223,6 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
     };
   }, [showToast]);
 
-  // Set dictionary-mode on body when list tab is active
-  useEffect(() => {
-    if (activeTab === 'list') {
-      document.body.classList.add('dictionary-mode');
-    } else {
-      document.body.classList.remove('dictionary-mode');
-    }
-  }, [activeTab]);
-
   // Handle Tab Switch
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -345,7 +336,7 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
   const baseUnitWords = currentUnit === 'ALL' ? allWords : allWords.filter((w) => w.library === currentUnit);
 
   return (
-    <>
+    <div className="h-screen h-[100dvh] flex flex-col overflow-hidden bg-canvas text-ink select-none">
       <Toast message={toastMsg} visible={toastVisible} isError={toastIsError} />
 
       <Header
@@ -361,7 +352,7 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
         onLogout={handleLogout}
       />
 
-      <main className="flex-1 max-w-xl w-full mx-auto px-3 sm:px-5 pt-2 pb-24 md:pb-5 flex flex-col justify-start min-h-0 overflow-hidden">
+      <main className="flex-1 max-w-xl w-full mx-auto px-3 sm:px-5 py-2 sm:py-3 flex flex-col justify-start min-h-0 overflow-hidden">
         {activeTab === 'flashcards' && (
           <FlashcardTab
             words={filteredWords}
@@ -447,6 +438,6 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
         onClose={() => setForgotPassModalOpen(false)}
         isSoundMuted={isSoundMuted}
       />
-    </>
+    </div>
   );
 };

@@ -16,14 +16,14 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   isSoundMuted,
 }) => {
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-canvas/95 backdrop-blur-md border-t border-hairline px-4 py-2 flex items-center justify-around font-mono">
+    <footer className="md:hidden flex-shrink-0 w-full bg-canvas/95 backdrop-blur-md border-t border-hairline px-3 py-1 flex items-center justify-around font-mono z-30">
       <button
         onClick={() => {
           playTapSound(isSoundMuted);
           onTabChange('flashcards');
         }}
         id="mob-flashcards"
-        className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3.5 rounded-[6px] min-h-[46px] transition-all tap-bounce cursor-pointer ${
+        className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-[6px] min-h-[42px] transition-all tap-bounce cursor-pointer ${
           activeTab === 'flashcards' ? 'text-primary' : 'text-mute'
         }`}
       >
@@ -39,7 +39,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           onTabChange('quiz');
         }}
         id="mob-quiz"
-        className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3.5 rounded-[6px] min-h-[46px] transition-all tap-bounce cursor-pointer ${
+        className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-[6px] min-h-[42px] transition-all tap-bounce cursor-pointer ${
           activeTab === 'quiz' ? 'text-primary' : 'text-mute'
         }`}
       >
@@ -55,7 +55,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           onTabChange('list');
         }}
         id="mob-list"
-        className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3.5 rounded-[6px] min-h-[46px] transition-all tap-bounce cursor-pointer ${
+        className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-[6px] min-h-[42px] transition-all tap-bounce cursor-pointer ${
           activeTab === 'list' ? 'text-primary' : 'text-mute'
         }`}
       >
@@ -71,7 +71,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           onTabChange('stats');
         }}
         id="mob-stats"
-        className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3.5 rounded-[6px] min-h-[46px] transition-all tap-bounce cursor-pointer ${
+        className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-[6px] min-h-[42px] transition-all tap-bounce cursor-pointer ${
           activeTab === 'stats' ? 'text-primary' : 'text-mute'
         }`}
       >
@@ -85,6 +85,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         </svg>
         <span className="text-[9px] font-semibold tracking-wider">METRICS</span>
       </button>
-    </div>
+    </footer>
   );
 };

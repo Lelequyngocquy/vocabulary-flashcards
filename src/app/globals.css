@@ -129,54 +129,28 @@ button, a, input, select, textarea, [role="button"], .tap-bounce, .perspective-1
   text-overflow: ellipsis;
 }
 
-/* DICTIONARY VIEW: PINNED HEADER & FILTER CARD + INDEPENDENT SCROLLING LIST */
-body.dictionary-mode {
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden !important;
-  padding-bottom: 0 !important;
+/* DICTIONARY VIEW: PINNED FILTER CARD + INDEPENDENT SCROLLING LIST */
+#tab-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
-body.dictionary-mode main {
-  height: calc(100vh - 53px);
-  height: calc(100dvh - 53px);
-  min-height: 0 !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-  padding-bottom: 4.5rem !important; /* Spacing for mobile bottom navigation */
+#dictFilterCard {
+  flex-shrink: 0;
 }
 
-@media (min-width: 768px) {
-  body.dictionary-mode main {
-    height: calc(100vh - 57px);
-    height: calc(100dvh - 57px);
-    padding-bottom: 1.25rem !important;
-  }
-}
-
-body.dictionary-mode #tab-list {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 0% !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-
-body.dictionary-mode #dictFilterCard {
-  flex-shrink: 0 !important;
-}
-
-body.dictionary-mode #dictListContainer {
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  max-height: 100% !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
+#dictListContainer {
+  flex: 1 1 0%;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 /* TYPE OF WORD BADGES: DISTINCTIVE COLOR PALETTE */
