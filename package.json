@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:1234": "next dev -p 1234",
     "build": "next build",
     "start": "next start",
+    "start:1234": "next dev -p 1234",
     "seed": "node scripts/seed.js",
     "deploy": "powershell -ExecutionPolicy Bypass -File ./update_vps.ps1",
+    "local": "powershell -ExecutionPolicy Bypass -File ./start_localhost_1234.ps1",
     "lint": "next lint"
   },
   "dependencies": {

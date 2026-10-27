@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { WordItem } from '@/types';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { WordItem } from "@/types";
 import {
   playTapSound,
   playFlipSound,
@@ -9,8 +9,8 @@ import {
   speakText,
   getWordTypeBadgeClass,
   getWordTypeLabel,
-} from '@/lib/audio';
-import confetti from 'canvas-confetti';
+} from "@/lib/audio";
+import confetti from "canvas-confetti";
 
 interface FlashcardTabProps {
   words: WordItem[];
@@ -45,7 +45,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
   speechRate,
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [slideAnim, setSlideAnim] = useState<string>('');
+  const [slideAnim, setSlideAnim] = useState<string>("");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isSpeakingExample, setIsSpeakingExample] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -71,7 +71,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
         word.word,
         speechRate,
         () => setIsSpeaking(true),
-        () => setIsSpeaking(false)
+        () => setIsSpeaking(false),
       );
     }, 100);
     return () => clearTimeout(timer);
@@ -90,11 +90,11 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
             word.example,
             speechRate,
             () => setIsSpeakingExample(true),
-            () => setIsSpeakingExample(false)
+            () => setIsSpeakingExample(false),
           );
         }, 150);
       } else if (!next) {
-        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
           window.speechSynthesis.cancel();
         }
       }
@@ -105,22 +105,22 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
   // Next card with animation
   const handleNext = useCallback(() => {
     if (words.length === 0) return;
-    setSlideAnim('slide-out-left');
+    setSlideAnim("slide-out-left");
     setTimeout(() => {
       onNextCard();
-      setSlideAnim('slide-in-right');
-      setTimeout(() => setSlideAnim(''), 220);
+      setSlideAnim("slide-in-right");
+      setTimeout(() => setSlideAnim(""), 220);
     }, 140);
   }, [words.length, onNextCard]);
 
   // Prev card with animation
   const handlePrev = useCallback(() => {
     if (words.length === 0) return;
-    setSlideAnim('slide-out-right');
+    setSlideAnim("slide-out-right");
     setTimeout(() => {
       onPrevCard();
-      setSlideAnim('slide-in-left');
-      setTimeout(() => setSlideAnim(''), 220);
+      setSlideAnim("slide-in-left");
+      setTimeout(() => setSlideAnim(""), 220);
     }, 140);
   }, [words.length, onPrevCard]);
 
@@ -132,7 +132,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
       word.word,
       speechRate,
       () => setIsSpeaking(true),
-      () => setIsSpeaking(false)
+      () => setIsSpeaking(false),
     );
   }, [word, isSoundMuted, speechRate]);
 
@@ -146,10 +146,10 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
         word.example,
         speechRate,
         () => setIsSpeakingExample(true),
-        () => setIsSpeakingExample(false)
+        () => setIsSpeakingExample(false),
       );
     },
-    [word, isSoundMuted, speechRate]
+    [word, isSoundMuted, speechRate],
   );
 
   // Copy example
@@ -159,25 +159,28 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
       if (!word || !word.example) return;
       playTapSound(isSoundMuted);
       const textToCopy = word.example.trim();
-      navigator.clipboard.writeText(textToCopy).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }).catch(() => {
-        // Fallback
-        const ta = document.createElement('textarea');
-        ta.value = textToCopy;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      });
+      navigator.clipboard
+        .writeText(textToCopy)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        })
+        .catch(() => {
+          // Fallback
+          const ta = document.createElement("textarea");
+          ta.value = textToCopy;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        });
     },
-    [word, isSoundMuted]
+    [word, isSoundMuted],
   );
 
   // Toggle learned status
@@ -240,14 +243,14 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
       }
     };
 
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: true });
-    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
 
     return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
     };
   }, [handleNext, handlePrev, isSoundMuted]);
 
@@ -262,90 +265,119 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
         return;
       }
 
-      if (e.code === 'ArrowDown' || e.code === 'Space') {
+      if (e.code === "ArrowDown" || e.code === "Space") {
         e.preventDefault();
         handleFlip();
-      } else if (e.code === 'ArrowRight') {
+      } else if (e.code === "ArrowRight") {
         e.preventDefault();
         playTapSound(isSoundMuted);
         handleNext();
-      } else if (e.code === 'ArrowLeft') {
+      } else if (e.code === "ArrowLeft") {
         e.preventDefault();
         playTapSound(isSoundMuted);
         handlePrev();
-      } else if (e.code === 'KeyS' || e.code === 'ArrowUp') {
+      } else if (e.code === "KeyS" || e.code === "ArrowUp") {
         e.preventDefault();
         handleSpeakCurrent();
-      } else if (e.code === 'KeyM') {
+      } else if (e.code === "KeyM") {
         e.preventDefault();
         handleToggleLearned();
       }
     };
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleFlip, handleNext, handlePrev, handleSpeakCurrent, handleToggleLearned, isSoundMuted]);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    handleFlip,
+    handleNext,
+    handlePrev,
+    handleSpeakCurrent,
+    handleToggleLearned,
+    isSoundMuted,
+  ]);
 
   // Responsive font sizes
   const wordLen = word?.word?.length || 0;
-  let wordFontClass = 'text-4xl sm:text-6xl md:text-7xl font-bold tracking-[-0.8px]';
+  let wordFontClass =
+    "text-4xl sm:text-6xl md:text-7xl font-bold tracking-[-0.8px]";
   if (wordLen > 20) {
-    wordFontClass = 'text-xl sm:text-2xl md:text-3xl font-bold tracking-normal';
+    wordFontClass = "text-xl sm:text-2xl md:text-3xl font-bold tracking-normal";
   } else if (wordLen > 13) {
-    wordFontClass = 'text-2xl sm:text-3xl md:text-5xl font-bold tracking-[-0.4px]';
+    wordFontClass =
+      "text-2xl sm:text-3xl md:text-5xl font-bold tracking-[-0.4px]";
   } else if (wordLen > 8) {
-    wordFontClass = 'text-3xl sm:text-5xl md:text-6xl font-bold tracking-[-0.6px]';
+    wordFontClass =
+      "text-3xl sm:text-5xl md:text-6xl font-bold tracking-[-0.6px]";
   }
 
   const meaningLen = word?.meaning?.length || 0;
-  let meaningFontClass = 'text-xl sm:text-2xl md:text-3xl font-bold';
+  let meaningFontClass = "text-xl sm:text-2xl md:text-3xl font-bold";
   if (meaningLen > 40) {
-    meaningFontClass = 'text-base sm:text-lg md:text-xl font-medium';
+    meaningFontClass = "text-base sm:text-lg md:text-xl font-medium";
   } else if (meaningLen > 22) {
-    meaningFontClass = 'text-lg sm:text-xl md:text-2xl font-semibold';
+    meaningFontClass = "text-lg sm:text-xl md:text-2xl font-semibold";
   }
 
   const exampleLen = word?.example?.length || 0;
-  let exampleFontClass = 'text-sm sm:text-base';
+  let exampleFontClass = "text-sm sm:text-base";
   if (exampleLen > 105) {
-    exampleFontClass = 'text-[11px] sm:text-xs md:text-sm';
+    exampleFontClass = "text-[11px] sm:text-xs md:text-sm";
   } else if (exampleLen > 70) {
-    exampleFontClass = 'text-xs sm:text-sm md:text-base';
+    exampleFontClass = "text-xs sm:text-sm md:text-base";
   }
 
   // Highlight word in example
   const renderExampleHtml = () => {
     if (!word || !word.example) {
-      return <span className="text-mute italic font-mono">// No example context attached.</span>;
+      return (
+        <span className="text-mute italic font-mono">
+          // No example context attached.
+        </span>
+      );
     }
     try {
-      const regex = new RegExp(`\\b(${word.word})\\b`, 'gi');
+      const regex = new RegExp(`\\b(${word.word})\\b`, "gi");
       const parts = word.example.split(regex);
       return parts.map((part, i) =>
         part.toLowerCase() === word.word.toLowerCase() ? (
-          <span key={i} className="text-primary font-semibold underline decoration-primary/40">
+          <span
+            key={i}
+            className="text-primary font-semibold underline decoration-primary/40"
+          >
             {part}
           </span>
         ) : (
           part
-        )
+        ),
       );
     } catch {
       return word.example;
     }
   };
 
-  const formattedIdx = String(words.length > 0 ? currentIndex + 1 : 0).padStart(2, '0');
-  const formattedTotal = String(words.length).padStart(2, '0');
-  const progressPct = words.length > 0 ? Math.round(((currentIndex + 1) / words.length) * 100) : 100;
+  const formattedIdx = String(words.length > 0 ? currentIndex + 1 : 0).padStart(
+    2,
+    "0",
+  );
+  const formattedTotal = String(words.length).padStart(2, "0");
+  const progressPct =
+    words.length > 0
+      ? Math.round(((currentIndex + 1) / words.length) * 100)
+      : 100;
 
   return (
-    <section id="tab-flashcards" className="flex flex-col flex-1 w-full justify-between h-full min-h-0">
+    <section
+      id="tab-flashcards"
+      className="flex flex-col flex-1 w-full justify-between h-full min-h-0"
+    >
       {/* Top Eyebrow & Metric Progress Bar */}
       <div className="mb-2 sm:mb-3 flex-shrink-0">
         <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-          <span id="fcUnitTitle" className="truncate max-w-[220px] sm:max-w-xs text-primary font-semibold tracking-wide">
-            {currentUnit === 'ALL' ? 'All 20 Units' : currentUnit}
+          <span
+            id="fcUnitTitle"
+            className="truncate max-w-[220px] sm:max-w-xs text-primary font-semibold tracking-wide"
+          >
+            {currentUnit === "ALL" ? "All 20 Units" : currentUnit}
           </span>
           <span id="fcCounter" className="text-mute font-mono">
             {formattedIdx} / {formattedTotal}
@@ -364,7 +396,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
       <div
         id="flashcardWrapper"
         ref={wrapperRef}
-        className={`perspective-1000 w-full min-h-[260px] sm:min-h-[340px] flex-1 max-h-[440px] select-none cursor-pointer my-auto ${slideAnim}`}
+        className={`perspective-1000 w-full min-h-[260px] sm:min-h-[290px] flex-1 max-h-[300px] select-none cursor-pointer my-auto ${slideAnim}`}
         onClick={handleFlip}
       >
         {words.length === 0 ? (
@@ -377,7 +409,9 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               ✓
             </div>
             <div>
-              <h3 className="text-lg sm:text-xl font-bold text-ink font-sans">ĐÃ MASTER TOÀN BỘ UNIT!</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-ink font-sans">
+                ĐÃ MASTER TOÀN BỘ UNIT!
+              </h3>
               <p className="text-xs sm:text-sm text-mute mt-1.5 font-sans max-w-xs leading-relaxed">
                 Tất cả từ vựng trong danh sách này đều đã được đánh dấu thuộc.
               </p>
@@ -398,7 +432,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
           <div
             id="flashcardInner"
             className={`relative w-full h-full transform-style-3d card-transition min-h-[320px] sm:min-h-[360px] rounded-[10px] border border-hairline bg-canvas ${
-              isFlipped ? 'rotate-y-180' : ''
+              isFlipped ? "rotate-y-180" : ""
             }`}
           >
             {/* FRONT OF CARD */}
@@ -408,19 +442,23 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                 <span
                   id="fcFrontType"
                   className={`px-2.5 py-1 rounded-[4px] text-xs sm:text-sm font-mono font-medium uppercase tracking-wider border ${getWordTypeBadgeClass(
-                    word?.type || ''
+                    word?.type || "",
                   )}`}
                 >
-                  {getWordTypeLabel(word?.type || '')}
+                  {getWordTypeLabel(word?.type || "")}
                 </span>
                 <div
                   id="fcFrontLearnedIndicator"
                   className={`flex items-center gap-1.5 text-xs sm:text-sm font-mono px-2.5 py-1 rounded-[4px] bg-canvas-soft border ${
-                    isLearned ? 'text-primary border-primary/50' : 'text-mute border-hairline'
+                    isLearned
+                      ? "text-primary border-primary/50"
+                      : "text-mute border-hairline"
                   }`}
                 >
-                  <span id="fcFrontLearnedIcon">{isLearned ? '●' : '○'}</span>
-                  <span id="fcFrontLearnedLabel">{isLearned ? 'MASTERED' : 'LEARNING'}</span>
+                  <span id="fcFrontLearnedIcon">{isLearned ? "●" : "○"}</span>
+                  <span id="fcFrontLearnedLabel">
+                    {isLearned ? "MASTERED" : "LEARNING"}
+                  </span>
                 </div>
               </div>
 
@@ -459,7 +497,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                   <span
                     id="fcBackType"
                     className={`text-xs font-mono px-2 py-0.5 rounded uppercase border font-medium shrink-0 ${getWordTypeBadgeClass(
-                      word?.type || ''
+                      word?.type || "",
                     )}`}
                   >
                     {word?.type}
@@ -468,11 +506,15 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                 <div
                   id="fcBackLearnedIndicator"
                   className={`flex items-center gap-1.5 text-xs sm:text-sm font-mono px-2.5 py-1 rounded-[4px] bg-canvas-soft border shrink-0 ${
-                    isLearned ? 'text-primary border-primary/50' : 'text-mute border-hairline'
+                    isLearned
+                      ? "text-primary border-primary/50"
+                      : "text-mute border-hairline"
                   }`}
                 >
-                  <span id="fcBackLearnedIcon">{isLearned ? '●' : '○'}</span>
-                  <span id="fcBackLearnedLabel">{isLearned ? 'MASTERED' : 'LEARNING'}</span>
+                  <span id="fcBackLearnedIcon">{isLearned ? "●" : "○"}</span>
+                  <span id="fcBackLearnedLabel">
+                    {isLearned ? "MASTERED" : "LEARNING"}
+                  </span>
                 </div>
               </div>
 
@@ -482,13 +524,19 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                   <p className="text-[10px] sm:text-[11px] font-mono text-mute uppercase tracking-[2px] mb-1 font-medium">
                     VIETNAMESE DEFINITION
                   </p>
-                  <p id="fcMeaning" className={`${meaningFontClass} text-primary leading-snug font-sans`}>
+                  <p
+                    id="fcMeaning"
+                    className={`${meaningFontClass} text-primary leading-snug font-sans`}
+                  >
                     {word?.meaning}
                   </p>
                 </div>
 
                 {/* Context Example */}
-                <div id="fcExampleContainer" className="bg-canvas-soft p-2.5 sm:p-3.5 rounded-[8px] border border-hairline">
+                <div
+                  id="fcExampleContainer"
+                  className="bg-canvas-soft p-2.5 sm:p-3.5 rounded-[8px] border border-hairline"
+                >
                   <div className="flex items-center justify-between mb-1 gap-2">
                     <div className="text-[10px] sm:text-[11px] font-mono text-mute uppercase tracking-widest font-medium flex items-center gap-1.5 flex-1 min-w-0">
                       <span className="text-primary font-bold">//</span>
@@ -501,11 +549,16 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                           onClick={handleSpeakExample}
                           id="fcSpeakExampleBtn"
                           className={`p-1 rounded-[4px] hover:bg-canvas transition-all tap-bounce flex items-center justify-center cursor-pointer ${
-                            isSpeakingExample ? 'text-primary' : 'text-mute hover:text-primary'
+                            isSpeakingExample
+                              ? "text-primary"
+                              : "text-mute hover:text-primary"
                           }`}
                           title="Listen to example"
                         >
-                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                          <svg
+                            className="w-3.5 h-3.5 fill-current"
+                            viewBox="0 0 24 24"
+                          >
                             <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
                           </svg>
                         </button>
@@ -517,11 +570,26 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                           title="Copy example"
                         >
                           {copied ? (
-                            <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            <svg
+                              className="w-3.5 h-3.5 text-primary"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M5 13l4 4L19 7"
+                              />
                             </svg>
                           ) : (
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg
+                              className="w-3.5 h-3.5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -584,15 +652,15 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
             id="fcToggleLearnedAction"
             className={`flex-1 py-2.5 sm:py-3 px-3 rounded-[8px] min-h-[44px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono cursor-pointer ${
               isLearned
-                ? 'bg-canvas-soft border border-primary text-primary font-semibold'
-                : 'bg-canvas hover:bg-canvas-soft border border-hairline text-ink'
+                ? "bg-canvas-soft border border-primary text-primary font-semibold"
+                : "bg-canvas hover:bg-canvas-soft border border-hairline text-ink"
             }`}
           >
             <span id="fcActionLearnedIcon" className="text-primary font-bold">
-              {isLearned ? '●' : '○'}
+              {isLearned ? "●" : "○"}
             </span>
             <span id="fcActionLearnedText">
-              {isLearned ? 'MASTERED (REVOKE)' : 'MARK MASTERED'}
+              {isLearned ? "MASTERED (REVOKE)" : "MARK MASTERED"}
             </span>
           </button>
 
@@ -604,14 +672,18 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
             id="btnFilterIncomplete"
             className={`py-2.5 sm:py-3 px-3 rounded-[8px] min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono text-xs sm:text-sm cursor-pointer ${
               filterOnlyIncomplete
-                ? 'bg-primary/15 hover:bg-primary/25 border border-primary text-primary font-semibold'
-                : 'bg-canvas hover:bg-canvas-soft border border-hairline text-body'
+                ? "bg-primary/15 hover:bg-primary/25 border border-primary text-primary font-semibold"
+                : "bg-canvas hover:bg-canvas-soft border border-hairline text-body"
             }`}
             title="Lọc từ chưa thuộc"
           >
-            <span id="filterIncompleteIcon">{filterOnlyIncomplete ? '●' : '○'}</span>
+            <span id="filterIncompleteIcon">
+              {filterOnlyIncomplete ? "●" : "○"}
+            </span>
             <span id="filterIncompleteText">
-              {filterOnlyIncomplete ? `Incomplete (${words.length})` : 'Incomplete'}
+              {filterOnlyIncomplete
+                ? `Incomplete (${words.length})`
+                : "Incomplete"}
             </span>
           </button>
 
@@ -623,8 +695,8 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
             id="btnShuffle"
             className={`py-2.5 sm:py-3 px-3 rounded-[8px] border min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono cursor-pointer ${
               isShuffled
-                ? 'bg-primary text-primary-on border-primary font-semibold'
-                : 'bg-canvas hover:bg-canvas-soft border-hairline text-body'
+                ? "bg-primary text-primary-on border-primary font-semibold"
+                : "bg-canvas hover:bg-canvas-soft border-hairline text-body"
             }`}
           >
             <span>SHUFFLE</span>
