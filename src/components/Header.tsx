@@ -14,6 +14,7 @@ interface HeaderProps {
   onToggleSound: () => void;
   username: string | null;
   onOpenAuth: () => void;
+  onOpenChangePassword: () => void;
   onLogout: () => void;
 }
 
@@ -27,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSound,
   username,
   onOpenAuth,
+  onOpenChangePassword,
   onLogout,
 }) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -101,18 +103,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Header Actions */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Sound Toggle */}
-          <button
-            onClick={onToggleSound}
-            id="soundMuteBtn"
-            className="p-1.5 rounded-[6px] bg-canvas-soft hover:bg-canvas border border-hairline text-mute hover:text-ink transition-all tap-bounce"
-            title="Audio"
-          >
-            <span id="soundMuteIcon" className="text-xs">
-              {isSoundMuted ? '🔕' : '🔔'}
-            </span>
-          </button>
-
           {/* User Profile / Login */}
           <div id="authSection" className="relative" ref={userMenuRef}>
             {!username ? (
@@ -161,6 +151,22 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                       <span>DB_SYNCED</span>
                     </div>
+
+                    {/* Change Password Button */}
+                    <button
+                      onClick={() => {
+                        playTapSound(isSoundMuted);
+                        setUserMenuOpen(false);
+                        onOpenChangePassword();
+                      }}
+                      className="w-full mt-1.5 px-2.5 py-1.5 rounded-[6px] bg-canvas-soft hover:bg-canvas text-ink hover:text-primary border border-hairline font-mono text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                      <span>CHANGE PASS</span>
+                    </button>
+
                     <button
                       onClick={() => {
                         playTapSound(isSoundMuted);

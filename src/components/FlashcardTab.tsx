@@ -49,6 +49,9 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isSpeakingExample, setIsSpeakingExample] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+
+  const activeFiltersCount = (filterOnlyIncomplete ? 1 : 0) + (isShuffled ? 1 : 0);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
@@ -645,7 +648,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
           </button>
         </div>
 
-        {/* Status & Auxiliary Actions: MARK MASTERED, Incomplete, SHUFFLE */}
+        {/* Status & Auxiliary Actions: MARK MASTERED & FILTER MODAL */}
         <div className="flex items-center justify-between gap-2 sm:gap-2.5 text-xs sm:text-sm font-mono">
           <button
             onClick={handleToggleLearned}
@@ -660,49 +663,207 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               {isLearned ? "●" : "○"}
             </span>
             <span id="fcActionLearnedText">
-              {isLearned ? "REVOKE" : "MARK"}
+              {isLearned ? "REVOKE" : "MARK MASTERED"}
             </span>
           </button>
 
+          {/* FILTER BUTTON (Gộp INCOMPLETE & SHUFFLE và mở popup) */}
           <button
             onClick={() => {
               playTapSound(isSoundMuted);
-              onToggleFilterIncomplete();
+              setFilterModalOpen(true);
             }}
-            id="btnFilterIncomplete"
-            className={`py-2 sm:py-2.5 px-3 rounded-[8px] min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono text-xs sm:text-sm cursor-pointer ${
-              filterOnlyIncomplete
+            id="fcFilterBtn"
+            className={`flex-1 py-2 sm:py-2.5 px-3 rounded-[8px] min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-2 transition-all tap-bounce font-mono cursor-pointer ${
+              activeFiltersCount > 0
                 ? "bg-primary/15 hover:bg-primary/25 border border-primary text-primary font-semibold"
-                : "bg-canvas hover:bg-canvas-soft border border-hairline text-body"
+                : "bg-canvas hover:bg-canvas-soft border border-hairline text-ink"
             }`}
-            title="Lọc từ chưa thuộc"
+            title="Tùy chọn bộ lọc"
           >
-            <span id="filterIncompleteIcon">
-              {filterOnlyIncomplete ? "●" : "○"}
-            </span>
-            <span id="filterIncompleteText">
-              {filterOnlyIncomplete
-                ? `INCOMPLETE (${words.length})`
-                : "INCOMPLETE"}
-            </span>
-          </button>
-
-          <button
-            onClick={() => {
-              playTapSound(isSoundMuted);
-              onToggleShuffle();
-            }}
-            id="btnShuffle"
-            className={`py-2 sm:py-2.5 px-3 rounded-[8px] border min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-1.5 transition-all tap-bounce font-mono cursor-pointer ${
-              isShuffled
-                ? "bg-primary text-primary-on border-primary font-semibold"
-                : "bg-canvas hover:bg-canvas-soft border-hairline text-body"
-            }`}
-          >
-            <span>SHUFFLE</span>
+            <svg className="w-3.5 h-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <span>FILTER</span>
+            {activeFiltersCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-primary text-primary-on text-[10px] font-bold leading-tight">
+                {activeFiltersCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
+
+      {/* FILTER POPUP MODAL */}
+      {filterModalOpen && (
+        <div
+          id="fcFilterModal"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              playTapSound(isSoundMuted);
+              setFilterModalOpen(false);
+            }
+          }}
+        >
+          <div className="relative w-full max-w-sm rounded-[10px] bg-canvas border border-hairline shadow-[0_20px_60px_rgba(0,0,0,0.9)] p-5 sm:p-6 space-y-4 font-mono select-none">
+            {/* Close button */}
+            <button
+              onClick={() => {
+                playTapSound(isSoundMuted);
+                setFilterModalOpen(false);
+              }}
+              className="absolute top-4 right-4 text-mute hover:text-ink p-1 rounded hover:bg-canvas-soft transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Header */}
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-canvas-soft border border-hairline text-primary font-mono text-[11px] mb-2">
+                <svg className="w-3.5 h-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span>FLASHCARD_FILTERS</span>
+              </div>
+              <h2 className="text-xl font-medium text-ink-strong tracking-tight font-sans">
+                Tùy chọn bộ lọc
+              </h2>
+              <p className="text-xs text-body mt-0.5 font-sans">
+                Lọc danh sách và tùy biến trải nghiệm học tập
+              </p>
+            </div>
+
+            {/* Options List */}
+            <div className="space-y-2.5 pt-1">
+              {/* Option 1: Incomplete Only */}
+              <div
+                onClick={() => {
+                  playTapSound(isSoundMuted);
+                  onToggleFilterIncomplete();
+                }}
+                className={`p-3 rounded-[8px] border transition-all cursor-pointer flex items-center justify-between gap-3 tap-bounce ${
+                  filterOnlyIncomplete
+                    ? "bg-primary/10 border-primary text-ink"
+                    : "bg-canvas-soft hover:bg-canvas border-hairline text-mute hover:text-ink"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-8 h-8 rounded-[6px] border flex items-center justify-center font-bold text-sm shrink-0 ${
+                      filterOnlyIncomplete
+                        ? "bg-primary text-primary-on border-primary"
+                        : "bg-canvas border-hairline text-mute"
+                    }`}
+                  >
+                    {filterOnlyIncomplete ? "✓" : "○"}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-sans font-medium text-xs sm:text-sm text-ink-strong">
+                        Chỉ từ chưa thuộc
+                      </span>
+                      <span className="text-[10px] text-mute uppercase font-mono">
+                        (Incomplete)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-mute font-sans mt-0.5">
+                      Ẩn những từ đã đánh dấu Mastered
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded uppercase border font-semibold shrink-0 ${
+                    filterOnlyIncomplete
+                      ? "bg-primary text-primary-on border-primary"
+                      : "bg-canvas border-hairline text-mute"
+                  }`}
+                >
+                  {filterOnlyIncomplete ? "ACTIVE" : "OFF"}
+                </div>
+              </div>
+
+              {/* Option 2: Shuffle Order */}
+              <div
+                onClick={() => {
+                  playTapSound(isSoundMuted);
+                  onToggleShuffle();
+                }}
+                className={`p-3 rounded-[8px] border transition-all cursor-pointer flex items-center justify-between gap-3 tap-bounce ${
+                  isShuffled
+                    ? "bg-primary/10 border-primary text-ink"
+                    : "bg-canvas-soft hover:bg-canvas border-hairline text-mute hover:text-ink"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-8 h-8 rounded-[6px] border flex items-center justify-center font-bold text-sm shrink-0 ${
+                      isShuffled
+                        ? "bg-primary text-primary-on border-primary"
+                        : "bg-canvas border-hairline text-mute"
+                    }`}
+                  >
+                    {isShuffled ? "✓" : "🔀"}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-sans font-medium text-xs sm:text-sm text-ink-strong">
+                        Xáo trộn ngẫu nhiên
+                      </span>
+                      <span className="text-[10px] text-mute uppercase font-mono">
+                        (Shuffle)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-mute font-sans mt-0.5">
+                      Đảo ngẫu nhiên vị trí các thẻ từ
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded uppercase border font-semibold shrink-0 ${
+                    isShuffled
+                      ? "bg-primary text-primary-on border-primary"
+                      : "bg-canvas border-hairline text-mute"
+                  }`}
+                >
+                  {isShuffled ? "ACTIVE" : "OFF"}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-2 flex items-center gap-2">
+              {activeFiltersCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTapSound(isSoundMuted);
+                    if (filterOnlyIncomplete) onToggleFilterIncomplete();
+                    if (isShuffled) onToggleShuffle();
+                  }}
+                  className="py-2.5 px-3 rounded-[6px] bg-canvas-soft hover:bg-canvas border border-hairline text-rose-400 hover:text-rose-300 text-xs font-semibold tap-bounce transition-colors cursor-pointer"
+                >
+                  Đặt lại
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  playTapSound(isSoundMuted);
+                  setFilterModalOpen(false);
+                }}
+                className="flex-1 py-2.5 rounded-[6px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs tracking-wider tap-bounce transition-colors cursor-pointer text-center"
+              >
+                XONG
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

@@ -233,6 +233,13 @@ export function createUser(username: string, passwordHash: string): { id: number
   return { id: userId, username };
 }
 
+export function updateUserPassword(userId: number, newPasswordHash: string): boolean {
+  const db = getDb();
+  const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+  const result = stmt.run(newPasswordHash, userId);
+  return (result.changes ?? 0) > 0;
+}
+
 /* ==================== PROGRESS QUERIES ==================== */
 
 export function getProgress(userId: number): ProgressRow | null {

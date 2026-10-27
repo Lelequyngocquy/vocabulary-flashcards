@@ -10,6 +10,7 @@ import { StatsTab } from '@/components/StatsTab';
 import { MobileNav } from '@/components/MobileNav';
 import { AuthModal } from '@/components/AuthModal';
 import { ForgotPasswordModal } from '@/components/ForgotPasswordModal';
+import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { Toast } from '@/components/Toast';
 import { playTapSound, playChimeSound } from '@/lib/audio';
 
@@ -34,6 +35,7 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
 
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [forgotPassModalOpen, setForgotPassModalOpen] = useState<boolean>(false);
+  const [changePassModalOpen, setChangePassModalOpen] = useState<boolean>(false);
 
   const [toastMsg, setToastMsg] = useState<string>('');
   const [toastVisible, setToastVisible] = useState<boolean>(false);
@@ -376,6 +378,7 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
         onToggleSound={handleToggleSound}
         username={username}
         onOpenAuth={() => setAuthModalOpen(true)}
+        onOpenChangePassword={() => setChangePassModalOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -439,6 +442,7 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
             onSpeechRateChange={handleSpeechRateChange}
             onResetAllProgress={handleResetProgress}
             isSoundMuted={isSoundMuted}
+            onToggleSound={handleToggleSound}
           />
         )}
       </main>
@@ -464,6 +468,14 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
         isOpen={forgotPassModalOpen}
         onClose={() => setForgotPassModalOpen(false)}
         isSoundMuted={isSoundMuted}
+      />
+
+      <ChangePasswordModal
+        isOpen={changePassModalOpen}
+        onClose={() => setChangePassModalOpen(false)}
+        authToken={authToken}
+        isSoundMuted={isSoundMuted}
+        onSuccess={(msg) => showToast(msg)}
       />
     </div>
   );

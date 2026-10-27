@@ -14,6 +14,7 @@ interface StatsTabProps {
   onSpeechRateChange: (rate: number) => void;
   onResetAllProgress: () => void;
   isSoundMuted: boolean;
+  onToggleSound: () => void;
 }
 
 export const StatsTab: React.FC<StatsTabProps> = ({
@@ -26,6 +27,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
   onSpeechRateChange,
   onResetAllProgress,
   isSoundMuted,
+  onToggleSound,
 }) => {
   const pendingCount = Math.max(0, totalWords - masteredCount);
   const totalPercentage = totalWords > 0 ? Math.round((masteredCount / totalWords) * 100) : 0;
@@ -102,7 +104,27 @@ export const StatsTab: React.FC<StatsTabProps> = ({
         <h3 className="text-xs font-mono uppercase tracking-widest text-mute">ENGINE CONFIGURATION</h3>
 
         <div className="space-y-3">
-          <div>
+          {/* SOUND EFFECTS TOGGLE */}
+          <div className="flex items-center justify-between font-mono">
+            <div>
+              <p className="text-xs text-ink font-semibold">SOUND_EFFECTS</p>
+              <p className="text-[10px] text-mute font-sans">Hiệu ứng âm thanh khi lật thẻ, làm quiz và tương tác.</p>
+            </div>
+            <button
+              onClick={onToggleSound}
+              id="btnToggleSoundConfig"
+              className={`px-3 py-1.5 rounded-[6px] border text-xs font-mono transition-all tap-bounce cursor-pointer flex items-center gap-1.5 ${
+                !isSoundMuted
+                  ? 'bg-primary/15 border-primary text-primary font-semibold'
+                  : 'bg-canvas-soft border-hairline text-mute'
+              }`}
+            >
+              <span>{isSoundMuted ? 'MUTED' : 'ENABLED'}</span>
+              <span className="text-xs">{isSoundMuted ? '🔕' : '🔔'}</span>
+            </button>
+          </div>
+
+          <div className="pt-2 border-t border-hairline">
             <div className="flex items-center justify-between text-xs text-ink mb-1 font-mono">
               <span>SPEECH_VELOCITY</span>
               <span id="speechRateDisplay" className="font-bold text-primary">
