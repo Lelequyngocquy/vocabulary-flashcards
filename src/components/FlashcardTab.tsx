@@ -25,6 +25,7 @@ interface FlashcardTabProps {
   onToggleFilterIncomplete: () => void;
   isShuffled: boolean;
   onToggleShuffle: () => void;
+  onApplyFilters?: (filterOnlyIncomplete: boolean, isShuffled: boolean) => void;
   isSoundMuted: boolean;
   speechRate: number;
 }
@@ -41,6 +42,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
   onToggleFilterIncomplete,
   isShuffled,
   onToggleShuffle,
+  onApplyFilters,
   isSoundMuted,
   speechRate,
 }) => {
@@ -51,7 +53,23 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
   const [copied, setCopied] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
 
-  const activeFiltersCount = (filterOnlyIncomplete ? 1 : 0) + (isShuffled ? 1 : 0);
+  // Draft filter states for the modal (only applied when user clicks DONE)
+  const [draftFilterOnlyIncomplete, setDraftFilterOnlyIncomplete] =
+    useState(filterOnlyIncomplete);
+  const [draftIsShuffled, setDraftIsShuffled] = useState(isShuffled);
+
+  // Sync draft states when modal opens
+  useEffect(() => {
+    if (filterModalOpen) {
+      setDraftFilterOnlyIncomplete(filterOnlyIncomplete);
+      setDraftIsShuffled(isShuffled);
+    }
+  }, [filterModalOpen, filterOnlyIncomplete, isShuffled]);
+
+  const activeFiltersCount =
+    (filterOnlyIncomplete ? 1 : 0) + (isShuffled ? 1 : 0);
+  const draftActiveFiltersCount =
+    (draftFilterOnlyIncomplete ? 1 : 0) + (draftIsShuffled ? 1 : 0);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
@@ -268,6 +286,15 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
         return;
       }
 
+      if (filterModalOpen) {
+        if (e.code === "Escape") {
+          e.preventDefault();
+          playTapSound(isSoundMuted);
+          setFilterModalOpen(false);
+        }
+        return;
+      }
+
       if (e.code === "ArrowDown" || e.code === "Space") {
         e.preventDefault();
         handleFlip();
@@ -297,6 +324,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
     handleSpeakCurrent,
     handleToggleLearned,
     isSoundMuted,
+    filterModalOpen,
   ]);
 
   // Responsive font sizes
@@ -413,10 +441,10 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
             </div>
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-ink font-sans">
-                ĐÃ MASTER TOÀN BỘ UNIT!
+                MASTERED ALL THE UNIT!
               </h3>
               <p className="text-xs sm:text-sm text-mute mt-1.5 font-sans max-w-xs leading-relaxed">
-                Tất cả từ vựng trong danh sách này đều đã được đánh dấu thuộc.
+                All the words on this topic has been marked as Mastered!
               </p>
             </div>
             <button
@@ -427,7 +455,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               }}
               className="py-2.5 px-4 rounded-[6px] bg-primary text-primary-on text-xs sm:text-sm font-semibold font-mono tracking-wider tap-bounce cursor-pointer"
             >
-              XEM LẠI TẤT CẢ TỪ
+              See all
             </button>
           </div>
         ) : (
@@ -482,7 +510,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               {/* Front Bottom Eyebrow */}
               <div className="text-center text-[11px] sm:text-xs text-mute flex items-center justify-center gap-1.5 font-mono uppercase tracking-[1.5px] sm:tracking-[2px] pt-2 border-t border-hairline/60">
                 <span className="text-primary text-sm font-bold">➔</span>
-                <span>CHẠM HOẶC [↓] ĐỂ LẬT • VUỐT ĐỂ CHUYỂN TỪ</span>
+                <span>Tap or [↓] to flip, sweep to see prev/next</span>
               </div>
             </div>
 
@@ -617,7 +645,7 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               {/* Back Bottom Eyebrow */}
               <div className="text-center text-[11px] sm:text-xs text-mute flex items-center justify-center gap-1.5 font-mono uppercase tracking-[1.5px] sm:tracking-[2px] pt-2 border-t border-hairline/60">
                 <span className="text-primary text-sm font-bold">➔</span>
-                <span>CHẠM HOẶC [↓] ĐỂ QUAY LẠI TỪ VỰNG</span>
+                <span>Tap or [↓] to back to word</span>
               </div>
             </div>
           </div>
@@ -671,6 +699,8 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
           <button
             onClick={() => {
               playTapSound(isSoundMuted);
+              setDraftFilterOnlyIncomplete(filterOnlyIncomplete);
+              setDraftIsShuffled(isShuffled);
               setFilterModalOpen(true);
             }}
             id="fcFilterBtn"
@@ -681,8 +711,16 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
             }`}
             title="Tùy chọn bộ lọc"
           >
-            <svg className="w-3.5 h-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            <svg
+              className="w-3.5 h-3.5 fill-none stroke-current"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
             </svg>
             <span>FILTER</span>
             {activeFiltersCount > 0 && (
@@ -715,16 +753,34 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               }}
               className="absolute top-4 right-4 text-mute hover:text-ink p-1 rounded hover:bg-canvas-soft transition-colors cursor-pointer"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
 
             {/* Header */}
             <div>
               <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-canvas-soft border border-hairline text-primary font-mono text-[11px] mb-2">
-                <svg className="w-3.5 h-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                <svg
+                  className="w-3.5 h-3.5 fill-none stroke-current"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                  />
                 </svg>
                 <span>FLASHCARD_FILTERS</span>
               </div>
@@ -742,47 +798,36 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               <div
                 onClick={() => {
                   playTapSound(isSoundMuted);
-                  onToggleFilterIncomplete();
+                  setDraftFilterOnlyIncomplete((prev) => !prev);
                 }}
                 className={`p-3 rounded-[8px] border transition-all cursor-pointer flex items-center justify-between gap-3 tap-bounce ${
-                  filterOnlyIncomplete
+                  draftFilterOnlyIncomplete
                     ? "bg-primary/10 border-primary text-ink"
                     : "bg-canvas-soft hover:bg-canvas border-hairline text-mute hover:text-ink"
                 }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`w-8 h-8 rounded-[6px] border flex items-center justify-center font-bold text-sm shrink-0 ${
-                      filterOnlyIncomplete
-                        ? "bg-primary text-primary-on border-primary"
-                        : "bg-canvas border-hairline text-mute"
-                    }`}
-                  >
-                    {filterOnlyIncomplete ? "✓" : "○"}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-sans font-medium text-xs sm:text-sm text-ink-strong">
+                      Incomplete Words Only
+                    </span>
+                    <span className="text-[10px] text-mute uppercase font-mono">
+                      (Unmastered)
+                    </span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-sans font-medium text-xs sm:text-sm text-ink-strong">
-                        Incomplete Words Only
-                      </span>
-                      <span className="text-[10px] text-mute uppercase font-mono">
-                        (Unmastered)
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-mute font-sans mt-0.5">
-                      Hide terms already marked as Mastered
-                    </p>
-                  </div>
+                  <p className="text-[11px] text-mute font-sans mt-0.5">
+                    Hide terms already marked as Mastered
+                  </p>
                 </div>
 
                 <div
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded uppercase border font-semibold shrink-0 ${
-                    filterOnlyIncomplete
+                  className={`w-14 h-6 flex items-center justify-center text-[10px] font-mono rounded uppercase border font-semibold shrink-0 ${
+                    draftFilterOnlyIncomplete
                       ? "bg-primary text-primary-on border-primary"
                       : "bg-canvas border-hairline text-mute"
                   }`}
                 >
-                  {filterOnlyIncomplete ? "ACTIVE" : "OFF"}
+                  {draftFilterOnlyIncomplete ? "ACTIVE" : "OFF"}
                 </div>
               </div>
 
@@ -790,60 +835,49 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
               <div
                 onClick={() => {
                   playTapSound(isSoundMuted);
-                  onToggleShuffle();
+                  setDraftIsShuffled((prev) => !prev);
                 }}
                 className={`p-3 rounded-[8px] border transition-all cursor-pointer flex items-center justify-between gap-3 tap-bounce ${
-                  isShuffled
+                  draftIsShuffled
                     ? "bg-primary/10 border-primary text-ink"
                     : "bg-canvas-soft hover:bg-canvas border-hairline text-mute hover:text-ink"
                 }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`w-8 h-8 rounded-[6px] border flex items-center justify-center font-bold text-sm shrink-0 ${
-                      isShuffled
-                        ? "bg-primary text-primary-on border-primary"
-                        : "bg-canvas border-hairline text-mute"
-                    }`}
-                  >
-                    {isShuffled ? "✓" : "🔀"}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-sans font-medium text-xs sm:text-sm text-ink-strong">
+                      Shuffle Flashcards
+                    </span>
+                    <span className="text-[10px] text-mute uppercase font-mono">
+                      (Randomize)
+                    </span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-sans font-medium text-xs sm:text-sm text-ink-strong">
-                        Shuffle Flashcards
-                      </span>
-                      <span className="text-[10px] text-mute uppercase font-mono">
-                        (Randomize)
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-mute font-sans mt-0.5">
-                      Randomize the study order of flashcards
-                    </p>
-                  </div>
+                  <p className="text-[11px] text-mute font-sans mt-0.5">
+                    Randomize the study order of flashcards
+                  </p>
                 </div>
 
                 <div
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded uppercase border font-semibold shrink-0 ${
-                    isShuffled
+                  className={`w-14 h-6 flex items-center justify-center text-[10px] font-mono rounded uppercase border font-semibold shrink-0 ${
+                    draftIsShuffled
                       ? "bg-primary text-primary-on border-primary"
                       : "bg-canvas border-hairline text-mute"
                   }`}
                 >
-                  {isShuffled ? "ACTIVE" : "OFF"}
+                  {draftIsShuffled ? "ACTIVE" : "OFF"}
                 </div>
               </div>
             </div>
 
             {/* Modal Actions */}
             <div className="pt-2 flex items-center gap-2">
-              {activeFiltersCount > 0 && (
+              {draftActiveFiltersCount > 0 && (
                 <button
                   type="button"
                   onClick={() => {
                     playTapSound(isSoundMuted);
-                    if (filterOnlyIncomplete) onToggleFilterIncomplete();
-                    if (isShuffled) onToggleShuffle();
+                    setDraftFilterOnlyIncomplete(false);
+                    setDraftIsShuffled(false);
                   }}
                   className="py-2.5 px-3 rounded-[6px] bg-canvas-soft hover:bg-canvas border border-hairline text-rose-400 hover:text-rose-300 text-xs font-semibold tap-bounce transition-colors cursor-pointer"
                 >
@@ -854,6 +888,16 @@ export const FlashcardTab: React.FC<FlashcardTabProps> = ({
                 type="button"
                 onClick={() => {
                   playTapSound(isSoundMuted);
+                  if (onApplyFilters) {
+                    onApplyFilters(draftFilterOnlyIncomplete, draftIsShuffled);
+                  } else {
+                    if (draftFilterOnlyIncomplete !== filterOnlyIncomplete) {
+                      onToggleFilterIncomplete();
+                    }
+                    if (draftIsShuffled !== isShuffled) {
+                      onToggleShuffle();
+                    }
+                  }
                   setFilterModalOpen(false);
                 }}
                 className="flex-1 py-2.5 rounded-[6px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs tracking-wider tap-bounce transition-colors cursor-pointer text-center"

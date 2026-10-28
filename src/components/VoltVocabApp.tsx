@@ -355,6 +355,21 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
     setCurrentIndex(0);
   };
 
+  // Apply Filter Modal Changes (called only when user clicks Done in Flashcard_filters)
+  const handleApplyFilters = useCallback(
+    (newFilterOnlyIncomplete: boolean, newIsShuffled: boolean) => {
+      const filterChanged = newFilterOnlyIncomplete !== filterOnlyIncomplete;
+      const shuffleChanged = newIsShuffled !== isShuffled;
+
+      if (filterChanged || shuffleChanged) {
+        setFilterOnlyIncomplete(newFilterOnlyIncomplete);
+        setIsShuffled(newIsShuffled);
+        setCurrentIndex(0);
+      }
+    },
+    [filterOnlyIncomplete, isShuffled]
+  );
+
   // Next / Prev card
   const handleNextCard = () => {
     if (filteredWords.length === 0) return;
@@ -483,6 +498,7 @@ export const VoltVocabApp: React.FC<VoltVocabAppProps> = ({ initialWords }) => {
             onToggleFilterIncomplete={handleToggleFilterIncomplete}
             isShuffled={isShuffled}
             onToggleShuffle={handleToggleShuffle}
+            onApplyFilters={handleApplyFilters}
             isSoundMuted={isSoundMuted}
             speechRate={speechRate}
           />
