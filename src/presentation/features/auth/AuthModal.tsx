@@ -1,24 +1,46 @@
 'use client';
 
 import React, { useState } from 'react';
-import { playTapSound, playChimeSound, playErrorSound } from '@/lib/audio';
-import { UserProgress } from '@/types';
+import { playTapSound, playChimeSound, playErrorSound } from '@/infrastructure/device/audioService';
+import { UserProgress } from '@/domain/entities';
+import { useAuthStore } from '@/application/stores/useAuthStore';
+import { useSettingsStore } from '@/application/stores/useSettingsStore';
+import { useVocabStore } from '@/application/stores/useVocabStore';
+import { useToastStore } from '@/application/stores/useToastStore';
 
-interface AuthModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onOpenForgotPass: () => void;
-  isSoundMuted: boolean;
-  onAuthSuccess: (token: string, username: string, progress?: UserProgress, role?: string) => void;
+export interface AuthModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  onOpenForgotPass?: () => void;
+  isSoundMuted?: boolean;
+  onAuthSuccess?: (token: string, username: string, progress?: UserProgress, role?: string) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({
-  isOpen,
-  onClose,
-  onOpenForgotPass,
-  isSoundMuted,
-  onAuthSuccess,
-}) => {
+export const AuthModal: React.FC<AuthModalProps> = (props) => {
+  const storeIsOpen = useAuthStore((s) => s.authModalOpen);
+  const storeClose = useAuthStore((s) => s.closeAuthModal);
+  const storeOpenForgot = useAuthStore((s) => s.openForgotPasswordModal);
+  const storeIsMuted = useSettingsStore((s) => s.isSoundMuted);
+
+  const isOpen = props.isOpen !== undefined ? props.isOpen : storeIsOpen;
+  const onClose = props.onClose ?? storeClose;
+  const onOpenForgotPass =
+    props.onOpenForgotPass ??
+    (() => {
+      storeClose();
+      storeOpenForgot();
+    });
+  const isSoundMuted = props.isSoundMuted !== undefined ? props.isSoundMuted : storeIsMuted;
+  const onAuthSuccess =
+    props.onAuthSuccess ??
+    ((token: string, username: string, progress?: UserProgress, role?: string) => {
+      useAuthStore.getState().login(token, username, role, progress);
+      if (progress) {
+        useVocabStore.getState().hydrateFromProgress(progress);
+      }
+      useToastStore.getState().showToast(`AUTH_SUCCESS: @${username}`);
+    });
+
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

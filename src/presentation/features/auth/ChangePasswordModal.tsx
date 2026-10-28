@@ -1,23 +1,35 @@
 'use client';
 
 import React, { useState } from 'react';
-import { playTapSound, playChimeSound, playErrorSound } from '@/lib/audio';
+import { playTapSound, playChimeSound, playErrorSound } from '@/infrastructure/device/audioService';
+import { useAuthStore } from '@/application/stores/useAuthStore';
+import { useSettingsStore } from '@/application/stores/useSettingsStore';
+import { useToastStore } from '@/application/stores/useToastStore';
 
-interface ChangePasswordModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  authToken: string | null;
-  isSoundMuted: boolean;
-  onSuccess: (message: string) => void;
+export interface ChangePasswordModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  authToken?: string | null;
+  isSoundMuted?: boolean;
+  onSuccess?: (message: string) => void;
 }
 
-export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
-  isOpen,
-  onClose,
-  authToken,
-  isSoundMuted,
-  onSuccess,
-}) => {
+export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = (props) => {
+  const storeIsOpen = useAuthStore((s) => s.changePassModalOpen);
+  const storeClose = useAuthStore((s) => s.closeChangePasswordModal);
+  const storeToken = useAuthStore((s) => s.authToken);
+  const storeIsMuted = useSettingsStore((s) => s.isSoundMuted);
+
+  const isOpen = props.isOpen !== undefined ? props.isOpen : storeIsOpen;
+  const onClose = props.onClose ?? storeClose;
+  const authToken = props.authToken !== undefined ? props.authToken : storeToken;
+  const isSoundMuted = props.isSoundMuted !== undefined ? props.isSoundMuted : storeIsMuted;
+  const onSuccess =
+    props.onSuccess ??
+    ((msg: string) => {
+      useToastStore.getState().showToast(msg);
+    });
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

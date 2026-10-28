@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createUser, findUserByUsername } from '@/lib/db';
+import { createUser, findUserByUsername, getDefaultCategory, getDefaultTopic } from '@/lib/db';
 import { hashPassword, createToken } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -12,14 +12,14 @@ export async function POST(request: Request) {
 
     if (username.length < 3 || username.length > 30) {
       return NextResponse.json(
-        { success: false, error: 'Tên đăng nhập phải từ 3 đến 30 ký tự.' },
+        { success: false, error: 'Username must be between 3 and 30 characters.' },
         { status: 400 }
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        { success: false, error: 'Mật khẩu phải có ít nhất 6 ký tự.' },
+        { success: false, error: 'Password must be at least 6 characters.' },
         { status: 400 }
       );
     }
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const existing = findUserByUsername(username);
     if (existing) {
       return NextResponse.json(
-        { success: false, error: 'Tên đăng nhập này đã được sử dụng. Vui lòng chọn tên khác.' },
+        { success: false, error: 'This username is already taken. Please choose another.' },
         { status: 400 }
       );
     }
@@ -38,6 +38,9 @@ export async function POST(request: Request) {
     const isAdmin = userRole === 'ADMIN';
     const token = createToken(user.id, user.username, userRole);
 
+    const defaultCat = getDefaultCategory();
+    const defaultTopic = getDefaultTopic(defaultCat.id);
+
     return NextResponse.json({
       success: true,
       token,
@@ -45,8 +48,8 @@ export async function POST(request: Request) {
       role: userRole,
       isAdmin,
       progress: {
-        current_category: 'Cambridge Vocabulary',
-        current_unit: 'Unit 1: Growing Up',
+        current_category: defaultCat.category,
+        current_unit: defaultTopic,
         current_index: 0,
         learned_words: [],
       },
@@ -54,7 +57,7 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const err = error as Error;
     return NextResponse.json(
-      { success: false, error: `Lỗi hệ thống: ${err.message || 'Unknown error'}` },
+      { success: false, error: `System error: ${err.message || 'Unknown error'}` },
       { status: 500 }
     );
   }

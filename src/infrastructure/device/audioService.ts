@@ -4,7 +4,9 @@ let audioCtx: AudioContext | null = null;
 export function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   if (!audioCtx) {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (AudioContextClass) audioCtx = new AudioContextClass();
   }
   if (audioCtx && audioCtx.state === 'suspended') {
@@ -116,65 +118,4 @@ export function playErrorSound(isMuted = false): void {
     osc.start(now);
     osc.stop(now + 0.17);
   } catch {}
-}
-
-export function speakText(
-  text: string,
-  rate = 0.9,
-  onStart?: () => void,
-  onEnd?: () => void
-): void {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  try {
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    }
-    window.speechSynthesis.cancel();
-  } catch {}
-
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = rate;
-
-  const voices = window.speechSynthesis.getVoices();
-  const engVoice = voices.find(
-    (v) =>
-      (v.lang === 'en-US' || v.lang === 'en-GB') &&
-      (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha'))
-  );
-  if (engVoice) u.voice = engVoice;
-
-  u.onstart = () => {
-    if (onStart) onStart();
-  };
-  u.onend = () => {
-    if (onEnd) onEnd();
-  };
-  u.onerror = () => {
-    if (onEnd) onEnd();
-  };
-
-  try {
-    window.speechSynthesis.speak(u);
-  } catch {}
-}
-
-export function getWordTypeBadgeClass(typeStr: string): string {
-  const t = (typeStr || '').trim().toLowerCase();
-  if (t === 'n' || t.startsWith('noun')) return 'badge-pos-noun';
-  if (t === 'v' || t.startsWith('verb')) return 'badge-pos-verb';
-  if (t === 'adj' || t.startsWith('adj')) return 'badge-pos-adj';
-  if (t === 'adv' || t.startsWith('adv')) return 'badge-pos-adv';
-  if (t === 'phrase' || t === 'phr' || t.startsWith('phras')) return 'badge-pos-phrase';
-  if (t === 'idiom') return 'badge-pos-idiom';
-  return 'badge-pos-default';
-}
-
-export function getWordTypeLabel(typeStr: string): string {
-  const t = (typeStr || '').trim().toLowerCase();
-  if (t === 'n') return 'noun';
-  if (t === 'v') return 'verb';
-  if (t === 'adj') return 'adj';
-  if (t === 'adv') return 'adv';
-  return typeStr || 'vocab';
 }

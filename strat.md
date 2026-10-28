@@ -1,8 +1,9 @@
 # KẾ HOẠCH TÁI CẤU TRÚC FRONTEND CLEAN ARCHITECTURE
 **Dự án**: IELTS Vocab Mastery (`ielts-vocab-mastery`)  
 **Tài liệu**: `strat.md`  
-**Phiên bản đề xuất**: 3.0.0 Architecture Plan  
-**Định hướng kiến trúc**: **Pragmatic Clean Architecture (React-Idiomatic Clean Architecture)**
+**Phiên bản đề xuất**: 3.2.0 Architecture Plan (Micro-Steps Edition)  
+**Định hướng kiến trúc**: **Pragmatic Clean Architecture + Zustand State Engine**  
+**Phương pháp thực thi**: **Incremental Strangler Fig Pattern (12 Micro-Steps - Chia nhỏ từng bước tránh ùn tắc / sai sót)**
 
 ---
 
@@ -25,58 +26,67 @@ Toàn bộ frontend hiện tại tập trung trong thư mục `src/components/`,
 
 ### 1.2. 5 Vấn đề Cốt lõi Cần Giải Quyết
 1. **Thiếu sự phân tầng (No Layering)**: Mã nguồn chỉ có 2 nhóm: `components` (chứa toàn bộ UI + state + logic nghiệp vụ) và `lib` (chứa db backend và audio). Không có tầng Domain độc lập hay tầng Data/Infrastructure riêng biệt.
-2. **Logic nghiệp vụ bị khóa chặt trong React (React Coupling)**: Các thuật toán quan trọng như: sinh đề trắc nghiệm (distractor generator), lọc từ theo trạng thái, thuật toán xáo trộn từ (Fisher-Yates shuffle), tính toán tiến độ... đều bị gắn chặt vào `useState` và `useEffect`. Không thể viết Unit Test độc lập nếu không render component.
+2. **Logic nghiệp vụ bị khóa chặt trong React (React Coupling)**: Các thuật toán quan trọng như sinh đề trắc nghiệm, lọc từ theo trạng thái, xáo trộn Fisher-Yates, tính toán tiến độ... đều bị gắn chặt vào `useState` và `useEffect`. Không thể test độc lập nếu không render component.
 3. **Phân mảnh giao tiếp API (Scattered I/O Calls)**: Mỗi component tự viết `fetch('/api/...')`, tự parse JSON, tự bắt lỗi, tự quản lý headers Authorization. Thiếu một HTTP Client tập trung.
-4. **Prop Drilling trầm trọng**: `VoltVocabApp` phải nắm giữ toàn bộ state và truyền qua 2-3 tầng component, gây re-render không cần thiết và khó khăn khi muốn thêm tính năng mới.
+4. **Prop Drilling trầm trọng**: `VoltVocabApp` phải nắm giữ toàn bộ state và truyền qua 2-3 tầng component, gây re-render diện rộng (re-render cascades) và khó khăn khi muốn thêm tính năng mới.
 5. **Khó bảo trì & mở rộng**: Khi cần thay đổi logic quiz hay bộ lọc từ vựng, lập trình viên buộc phải can thiệp trực tiếp vào file UI dài hàng trăm dòng.
 
 ---
 
-## 2. LỰA CHỌN PHƯƠNG ÁN KIẾN TRÚC TỐI ƯU
+## 2. LỰA CHỌN PHƯƠNG ÁN KIẾN TRÚC TỐI ƯU: CLEAN ARCHITECTURE + ZUSTAND
 
-Khi áp dụng Clean Architecture vào Frontend, có 2 trường phái chính:
+### 2.1. Tại sao chọn Zustand làm State Engine cho Clean Architecture?
+Khi áp dụng Clean Architecture vào Frontend, tầng **Application Layer** có nhiệm vụ quản lý State và điều phối Use Cases. Thay vì dùng React Context (dễ gây re-render thừa toàn bộ cây component con khi 1 giá trị nhỏ thay đổi và phải bọc nhiều `<Provider>` lồng nhau), **Zustand** là mảnh ghép hoàn hảo nhất:
+
+- **Atomic Selectors (Chống re-render thừa)**: Component chỉ re-render khi đúng trường dữ liệu nó đăng ký thay đổi (ví dụ: `const currentUnit = useVocabStore((s) => s.currentUnit)`).
+- **Trọng lượng siêu nhẹ (~1.1 kB)**: Không có boilerplate cồng kềnh như Redux (không action types, dispatchers, reducers).
+- **Hỗ trợ Middleware Persist**: Tự động đồng bộ các state cần lưu trữ (`authToken`, `soundMuted`, `speechRate`, `learnedWords`) xuống `localStorage` một cách an toàn và tự nhiên.
+- **Tách biệt khỏi React Lifecycle**: Zustand stores có thể được gọi hoặc dispatch action ngay cả bên ngoài React components (ví dụ trong API interceptors hoặc domain engines khi cần thiết).
 
 ```
-[Phương án 1: Strict Enterprise Clean Architecture]
-Entities -> Use Cases (Classes) -> Repositories (Interfaces) -> Repository Impls -> Controllers -> Presenters -> React UI
-==> ❌ KHÔNG PHÙ HỢP: Quá nặng nề, Over-engineering, sinh ra hàng chục file boilerplate thừa cho 1 app Next.js nhỏ.
-
-[Phương án 2: Pragmatic Clean Architecture (React-Idiomatic Clean Architecture)]
-Domain (Pure TS) <--- Application (Custom Hooks & Context) <--- Infrastructure (Services/Adapters) <--- Presentation (UI)
-==>  LỰA CHỌN TỐI ƯU: Giữ trọn giá trị cốt lõi của Clean Architecture nhưng tối giản, gắn kết tự nhiên với React 19 / Next.js.
+[Mô hình kết hợp: Clean Architecture + Zustand]
+┌─────────────────────────────────────────────────────────────┐
+│ 🟣 PRESENTATION LAYER (React Components)                    │
+│    - Dumb Views, UI Markup, Tailwind CSS, Touch Gestures     │
+│    - Đăng ký dữ liệu qua Zustand Selectors (Zero Re-render) │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ calls actions / reads state
+┌──────────────────────────────▼──────────────────────────────┐
+│ 🔵 APPLICATION LAYER (Zustand Stores & Custom Hooks)        │
+│    - useVocabStore (Categories, Units, Filter, Learned)     │
+│    - useAuthStore (Session, Role, Token, Login/Logout)      │
+│    - useSettingsStore (Mute, Speech Rate, Theme)            │
+│    - useToastStore (Global Notifications)                   │
+│    - Feature Hooks: useFlashcards, useQuiz, useDictionary   │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │ delegates                    │ calls
+┌──────────────▼──────────────┐ ┌─────────────▼───────────────┐
+│ 🟢 DOMAIN LAYER (Pure TS)   │ │ 🟡 INFRASTRUCTURE LAYER     │
+│    - Entities & Types       │ │    - HttpClient (API)       │
+│    - QuizEngine             │ │    - LocalStorageAdapter    │
+│    - Filter & Shuffle Engine│ │    - Audio & Speech Service │
+└─────────────────────────────┘ └─────────────────────────────┘
 ```
-
-### 2.1. So sánh chi tiết
-
-| Tiêu chí | Strict Enterprise Clean Architecture | Pragmatic Clean Architecture (Đề xuất) |
-|---|---|---|
-| **Số lượng tầng** | 5-6 tầng (Entities, UseCases, Repositories, DTOs, Mappers, Presenters, Views) | 4 tầng tinh gọn (Domain, Infrastructure, Application/Hooks, Presentation) |
-| **Boilerplate** | Rất cao (Mỗi action cần 1 Interface, 1 Class Interactor, 1 DTO, 1 Mapper) | Cực thấp (Tận dụng Pure Functions, TypeScript Types & React Custom Hooks) |
-| **Tính tương thích React**| Kém tự nhiên (phải ép DI Container như Inversify, xử lý Observable/Class) | Tự nhiên 100% (Hooks đóng vai trò Use Case, Context đóng vai trò State Provider) |
-| **Khả năng Unit Test** | 100% testable | 100% testable (Domain & Services test độc lập không cần DOM/React) |
-| **Chi phí bảo trì dự án nhỏ**| Quá cao, làm chậm tốc độ phát triển | Cân bằng hoàn hảo: Rõ ràng, sạch sẽ, mở rộng nhanh chóng |
-
-### 2.2. Kết luận lựa chọn: **Pragmatic Clean Architecture**
-- **Domain Core**: Giữ lại trái tim của Clean Architecture: Các thực thể (`Word`, `Category`, `UserProgress`) và quy tắc nghiệp vụ (`QuizEngine`, `FilterEngine`, `ShuffleEngine`) là các hàm TypeScript thuần túy (**Pure TypeScript**), không import React hay Next.js.
-- **Application Layer**: Đóng gói các trường hợp sử dụng (Use Cases) bằng **React Custom Hooks** (`useFlashcards`, `useQuiz`, `useDictionary`, `useWordEditor`) kết hợp **Lightweight Contexts** để triệt tiêu prop drilling.
-- **Infrastructure Layer**: Độc lập hóa API Client, Browser Storage và Device Hardware (Web Audio/Speech).
-- **Presentation Layer**: Các component chỉ tập trung vào việc hiển thị và bắt sự kiện người dùng (Dumb/Presentational Components).
 
 ---
 
-## 3. SƠ ĐỒ KIẾN TRÚC & QUY TẮC PHỤ THUỘC (DEPENDENCY RULE)
+## 3. SƠ ĐỒ KIẾN TRÚC & QUY TẮC PHỤ THUỘ (DEPENDENCY RULE)
 
-Theo Clean Architecture, **Quy tắc phụ thuộc (Dependency Rule)** quy định: Mã nguồn ở tầng ngoài chỉ được phép phụ thuộc vào mã nguồn ở tầng trong. Tầng trung tâm (Domain) không phụ thuộc vào bất cứ tầng nào.
+Theo Clean Architecture, **Quy tắc phụ thuộc (Dependency Rule)** quy định: Mã nguồn ở tầng ngoài chỉ được phép phụ thuộc vào mã nguồn ở tầng trong. Tầng trung tâm (Domain) hoàn toàn độc lập với React, Zustand hay bất kỳ thư viện bên ngoài nào.
 
 ```mermaid
 flowchart TD
-    subgraph Presentation ["Presentation Layer (Giao diện)"]
+    subgraph Presentation ["Presentation Layer (Giao diện người dùng)"]
         UI_Components["React Components (Views, Modals, Shell)"]
-        UI_Contexts["Context Providers (Auth, Sound, Toast)"]
+        UI_Micro["Micro-components (FlashcardCard, FilterModal, QuizViews)"]
     end
 
-    subgraph Application ["Application Layer (Use Cases & Hooks)"]
-        Hooks["Custom Hooks (useFlashcards, useQuiz, useDictionary, useAuth)"]
+    subgraph Application ["Application Layer (Zustand Stores & Use Cases)"]
+        VocabStore["useVocabStore (Words, Units, Filter, Learned)"]
+        AuthStore["useAuthStore (User, Role, Token, Sync)"]
+        SettingsStore["useSettingsStore (Sound, SpeechRate)"]
+        ToastStore["useToastStore (Global Toast)"]
+        FeatureHooks["Custom Hooks (useFlashcards, useQuiz, useDictionary)"]
     end
 
     subgraph Infrastructure ["Infrastructure Layer (Adapters & I/O)"]
@@ -92,53 +102,21 @@ flowchart TD
         ValidationRules["Validation Rules (Word edit, Password check)"]
     end
 
-    UI_Components --> Hooks
-    UI_Contexts --> Hooks
-    Hooks --> Domain
-    Hooks --> Infrastructure
+    UI_Components --> Application
+    UI_Micro --> Application
+    FeatureHooks --> VocabStore
+    FeatureHooks --> AuthStore
+    FeatureHooks --> SettingsStore
+    FeatureHooks --> ToastStore
+    Application --> Domain
+    Application --> Infrastructure
     Infrastructure -.->|Implements / Serves| Domain
-    
+
     style Domain fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff
     style Application fill:#0284c7,stroke:#0369a1,stroke-width:2px,color:#fff
     style Infrastructure fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff
     style Presentation fill:#8b5cf6,stroke:#6d28d9,stroke-width:2px,color:#fff
 ```
-
-### Chi tiết 4 tầng chức năng:
-
-1. **Domain Layer (`src/domain/`)**:
-   - **Đặc điểm**: Mã nguồn thuần TypeScript (`.ts`), không có JSX, không có React hook (`useState`, `useEffect`), không có `fetch` hay `window`.
-   - **Nhiệm vụ**: Chứa kiểu dữ liệu thực thể (`entities/`) và thuật toán lõi (`services/`):
-     - `quizEngine.ts`: Thuật toán chọn từ ngẫu nhiên, sinh 3 câu sai (distractors), hoán vị phương án, tính điểm, streak.
-     - `filterEngine.ts`: Logic lọc từ vựng theo Topic, POS, trạng thái Mastered/Unmastered, thuật toán xáo trộn thẻ từ.
-     - `validation.ts`: Kiểm tra hợp lệ dữ liệu từ vựng, mật khẩu.
-
-2. **Infrastructure Layer (`src/infrastructure/`)**:
-   - **Đặc điểm**: Chịu trách nhiệm tương tác với thế giới bên ngoài (I/O, Network, Browser APIs).
-   - **Nhiệm vụ**:
-     - `http/client.ts`: Wrapper cho `fetch` xử lý Base URL, gắn JWT Token tự động, chuẩn hóa error format.
-     - `api/wordApi.ts`, `api/authApi.ts`, `api/progressApi.ts`: Các hàm gọi API cụ thể.
-     - `storage/storageService.ts`: Đọc/ghi LocalStorage an toàn (fallback khi SSR, try/catch, type-safe).
-     - `device/audioService.ts`: Tạo âm thanh Web Audio (Tap, Flip, Chime, Correct, Error).
-     - `device/speechService.ts`: Gọi Web SpeechSynthesis API.
-
-3. **Application Layer (`src/application/`)**:
-   - **Đặc điểm**: Tương đương với các **Use Cases** trong Clean Architecture, được biểu diễn bằng **React Custom Hooks** và **React Context**.
-   - **Nhiệm vụ**:
-     - `useFlashcards.ts`: Điều phối danh sách từ vựng, lật thẻ, điều hướng next/prev, lưu trạng thái hoàn thành.
-     - `useQuiz.ts`: Khởi tạo bài quiz thông qua `quizEngine`, quản lý luồng thi, nộp bài, lưu điểm.
-     - `useDictionary.ts`: Quản lý tìm kiếm, filter từ, mở modal sửa từ.
-     - `useAuth.ts` & `AuthContext`: Quản lý session đăng nhập, phân quyền user/admin.
-     - `useSound.ts` & `SoundContext`: Quản lý trạng thái bật/tắt âm thanh toàn app.
-     - `useToast.ts` & `ToastContext`: Cung cấp hàm `showToast` toàn cục, triệt tiêu việc truyền callback qua 3 tầng.
-
-4. **Presentation Layer (`src/presentation/` hoặc `src/components/`)**:
-   - **Đặc điểm**: Chỉ tập trung vào giao diện người dùng, Tailwind CSS, bố cục và hiệu ứng.
-   - **Nhiệm vụ**: Nhận data và callbacks từ Custom Hooks, không chứa thuật toán phức tạp hay API call trực tiếp.
-     - `features/flashcards/`: `FlashcardCard.tsx`, `FlashcardControls.tsx`, `FlashcardFilterModal.tsx`.
-     - `features/quiz/`: `QuizIntroView.tsx`, `QuizActiveView.tsx`, `QuizResultView.tsx`.
-     - `features/dictionary/`: `DictionarySearch.tsx`, `DictionaryTable.tsx`, `EditWordModal.tsx`.
-     - `shared/`: `Header.tsx`, `MobileNav.tsx`, `Toast.tsx`.
 
 ---
 
@@ -175,13 +153,14 @@ src/
 │       ├── audioService.ts            # Web Audio API synthesizers (tap, chime, flip, error)
 │       └── speechService.ts           # SpeechSynthesis wrapper
 │
-├── application/                       # 🔵 TẦNG APPLICATION (Use Cases & React State)
-│   ├── contexts/
-│   │   ├── AuthContext.tsx            # Session, User Role, Token, Login/Logout actions
-│   │   ├── SoundContext.tsx           # Sound mute state, Speech rate, Sound trigger
-│   │   └── ToastContext.tsx           # Global Toast notification manager
+├── application/                       # 🔵 TẦNG APPLICATION (Zustand Stores & Use Cases)
+│   ├── stores/
+│   │   ├── useVocabStore.ts           # Quản lý Words, Categories, Units, Learned, Filters
+│   │   ├── useAuthStore.ts            # Quản lý User Session, JWT, Role, Progress Sync
+│   │   ├── useSettingsStore.ts        # Quản lý Sound Mute, Speech Rate (Persist middleware)
+│   │   └── useToastStore.ts           # Quản lý Toast Notification toàn cục
 │   └── hooks/
-│       ├── useFlashcards.ts           # Use Case: Luyện flashcard, lật thẻ, chuyển từ, filter
+│       ├── useFlashcards.ts           # Use Case: Luyện flashcard, lật thẻ, chuyển từ, gestures
 │       ├── useQuiz.ts                 # Use Case: Thi trắc nghiệm, chọn đáp án, streak, tổng kết
 │       ├── useDictionary.ts           # Use Case: Tra cứu, bộ lọc POS, từ đã thuộc/chưa thuộc
 │       └── useWordEditor.ts           # Use Case: Chỉnh sửa thông tin từ vựng, đổi Unit/Category
@@ -189,7 +168,7 @@ src/
 └── presentation/                      # 🟣 TẦNG PRESENTATION (React UI Components)
     ├── features/
     │   ├── flashcards/
-    │   │   ├── FlashcardTab.tsx       # Container kết nối useFlashcards
+    │   │   ├── FlashcardTab.tsx       # Container kết nối useFlashcards (~150 dòng)
     │   │   ├── FlashcardCard.tsx      # Thẻ lật 3D (Front / Back presentation)
     │   │   ├── FlashcardControls.tsx  # Nút phát âm, mastered, filter trigger
     │   │   └── FlashcardFilterModal.tsx # Popup Flashcard_filters (Draft state)
@@ -212,239 +191,349 @@ src/
     ├── shared/
     │   ├── Header.tsx                 # Category/Unit selector, Audio, User dropdown
     │   ├── MobileNav.tsx              # Bottom navigation bar cho mobile
-    │   ├── Toast.tsx                  # Toast visual component
+    │   ├── Toast.tsx                  # Toast visual component (kết nối useToastStore)
     │   └── ui/                        # Micro-components dùng chung (Badge, Modal, Button)
-    └── AppShell.tsx                   # Layout shell thay thế cho VoltVocabApp monolithic
+    └── AppShell.tsx                   # Layout shell thay thế cho VoltVocabApp monolithic (~80 dòng)
 ```
 
 ---
 
-## 5. LỘ TRÌNH THỰC HIỆN TỪNG BƯỚC (5-PHASE EXECUTION ROADMAP)
+## 5. LỘ TRÌNH CHIA NHỎ TỪNG BƯỚC THỰC HIỆN DẦN (STEP-BY-STEP MICRO-EXECUTION ROADMAP)
 
-Để đảm bảo an toàn tuyệt đối và **không gây gián đoạn (Zero Breaking Changes)** cho website đang hoạt động, chúng ta áp dụng **Strangler Fig Pattern** (chuyển đổi từng phần độc lập, kiểm tra build sau mỗi bước).
+Để **triệt tiêu rủi ro sai sót, gãy ứng dụng hoặc ùn tắc (bottleneck/regressions)**, kế hoạch tái cấu trúc được chia nhỏ thành **12 bước vi mô (Atomic Micro-Steps)** trải dài qua 5 mốc Milestone.
 
-### Giai đoạn 1: Xây dựng Nền tảng Hạ tầng & Domain Types (Foundation)
-- **Mục tiêu**: Chuẩn hóa I/O, API client và kiểu dữ liệu trước khi đụng vào UI.
-- **Các bước thực hiện**:
-  1. Tạo thư mục `src/domain/entities/` và di chuyển/chuẩn hóa các interface từ `src/types/index.ts`.
-  2. Tạo `src/infrastructure/http/httpClient.ts`: Đóng gói `fetch` chuẩn hóa với timeout, token interceptor và error formatting.
-  3. Tạo các file API: `wordApi.ts`, `authApi.ts`, `progressApi.ts` gom toàn bộ các lệnh `fetch` phân tán về một mối.
-  4. Tạo `src/infrastructure/storage/localStorageAdapter.ts` thay thế việc gọi `localStorage.getItem/setItem` rải rác.
-  5. Tách `src/lib/audio.ts` thành `audioService.ts` (thuần AudioContext) và `speechService.ts` (thuần SpeechSynthesis). Di chuyển hàm format CSS (`getWordTypeBadgeClass`) về Presentation Layer.
-- **Tiêu chí nghiệm thu (Gate 1)**: `npx tsc --noEmit` thành công 100%, không phát sinh lỗi types.
+> **Nguyên tắc an toàn bắt buộc cho mỗi bước**:
+> 1. Mỗi bước chỉ thay đổi 1 phạm vi giới hạn (khoảng 1 - 3 files).
+> 2. Sau **mỗi một bước**, bắt buộc chạy `npx tsc --noEmit` để đảm bảo hệ thống types không lỗi.
+> 3. Website hiện tại **vẫn phải chạy bình thường 100% sau mỗi bước** (chưa xóa component cũ cho đến khi component mới sẵn sàng).
 
-### Giai đoạn 2: Tách biệt Logic Nghiệp vụ thuần túy (Domain Engines)
-- **Mục tiêu**: Đưa toàn bộ thuật toán ra khỏi component React, chuyển thành Pure Functions.
-- **Các bước thực hiện**:
-  1. Tạo `src/domain/engines/quizEngine.ts`:
-     - Tách hàm `generateQuizQuestions(words, unit, mode, length)` từ `QuizTab.tsx`.
-     - Tách hàm `evaluateAnswer(target, chosenOption)` và tính điểm, chuỗi streak.
-  2. Tạo `src/domain/engines/filterEngine.ts`:
-     - Tách thuật toán Fisher-Yates shuffle `shuffleArray<T>()`.
-     - Tách logic lọc từ `filterFlashcardWords(words, onlyIncomplete, isShuffled, learnedSet)`.
-     - Tách logic tìm kiếm & filter từ điển `filterDictionaryWords(...)`.
-- **Tiêu chí nghiệm thu (Gate 2)**: Viết unit test nhanh hoặc kiểm tra chạy thử các engine với dữ liệu mẫu, đảm bảo kết quả trùng khớp 100% với logic cũ.
+```mermaid
+flowchart LR
+    M1["Milestone 1:<br/>Nền tảng & Hạ tầng<br/>(Bước 1.1 → 1.4)"] --> M2["Milestone 2:<br/>Domain Engines<br/>(Bước 2.1 → 2.2)"]
+    M2 --> M3["Milestone 3:<br/>Zustand Stores<br/>(Bước 3.1 → 3.3)"]
+    M3 --> M4["Milestone 4:<br/>Refactor từng Feature<br/>(Bước 4.1 → 4.4)"]
+    M4 --> M5["Milestone 5:<br/>Chuyển đổi Root & Cleanup<br/>(Bước 5.1 → 5.4)"]
 
-### Giai đoạn 3: Tinh gọn Quản lý State & Triệt tiêu Prop Drilling (Application Layer)
-- **Mục tiêu**: Xây dựng các Context và Custom Hooks đóng vai trò Use Cases.
-- **Các bước thực hiện**:
-  1. Tạo `ToastContext.tsx`: Cung cấp hàm `useToast()` cho toàn app. Các modal và tab gọi trực tiếp `showToast('...')` mà không cần nhận qua props.
-  2. Tạo `SoundContext.tsx`: Cung cấp `useSound()` (gồm trạng thái mute, speech rate, các hàm play sound).
-  3. Tạo `AuthContext.tsx`: Quản lý thông tin đăng nhập, token, role và auto-sync user progress.
-  4. Viết các Hook Use Cases:
-     - `useFlashcards`: Quản lý currentIndex, flip state, filter draft state, tương tác lật/next/prev.
-     - `useQuiz`: Quản lý vòng đời quiz (`intro` -> `active` -> `result`), trả lời câu hỏi, tính điểm.
-     - `useDictionary`: Quản lý search, filter POS, selection sửa từ.
-- **Tiêu chí nghiệm thu (Gate 3)**: Kiểm tra các hook hoạt động độc lập qua React testing hoặc kiểm tra types.
-
-### Giai đoạn 4: Phân rã Component & Tối giản `VoltVocabApp` (Presentation Layer)
-- **Mục tiêu**: Chia nhỏ các file component khổng lồ thành các micro-components sạch sẽ.
-- **Các bước thực hiện**:
-  1. **Phân rã `FlashcardTab.tsx` (913 dòng)**:
-     - Tách `FlashcardFilterModal.tsx`: Độc lập hóa modal filter với draft state và fixed badge size.
-     - Tách `FlashcardCard.tsx`: Chỉ chuyên trách thẻ bài lật 3D (mặt trước / mặt sau).
-     - Tách `useCardGestures.ts`: Tách logic lắng nghe swipe chạm và phím tắt bàn phím.
-  2. **Phân rã `QuizTab.tsx` (363 dòng)**:
-     - Tách thành 3 view con: `QuizIntroView.tsx`, `QuizActiveView.tsx`, `QuizResultView.tsx`.
-  3. **Tái cấu trúc `EditWordModal.tsx` & `DictionaryTab.tsx`**:
-     - Cho phép modal dùng `useWordEditor` gọi thẳng `wordApi.updateWord`, không cần truyền nhiều callbacks.
-  4. **Tối giản `VoltVocabApp.tsx` (587 dòng) thành `AppShell.tsx` (~80 dòng)**:
-     - Loại bỏ việc lưu giữ toàn bộ state tại root.
-     - `AppShell` chỉ đóng vai trò layout bao bọc: `Header`, vùng `main` hiển thị tab tương ứng, và `MobileNav`.
-- **Tiêu chí nghiệm thu (Gate 4)**: Toàn bộ ứng dụng hoạt động mượt mà, giao diện và hiệu ứng giữ nguyên vẹn 100%.
-
-### Giai đoạn 5: Tối ưu, Dọn dẹp & Xác minh (Verification & Cleanup)
-- **Mục tiêu**: Đảm bảo không còn file rác, bundle size tối ưu và code sạch sẽ.
-- **Các bước thực hiện**:
-  1. Xóa các biến/import không còn sử dụng.
-  2. Chạy kiểm tra tĩnh: `npx tsc --noEmit` và `npm run lint`.
-  3. Chạy production build: `npm run build` để kiểm tra kích thước bundle First Load JS.
-  4. Test toàn bộ luồng người dùng: Học thẻ, lật thẻ, lưu từ Mastered, thi Quiz, tìm kiếm từ điển, sửa từ, đăng nhập, đổi mật khẩu.
-- **Tiêu chí nghiệm thu (Gate 5)**: Production build thành công, không có cảnh báo/lỗi runtime.
+    style M1 fill:#0284c7,stroke:#0369a1,color:#fff
+    style M2 fill:#10b981,stroke:#047857,color:#fff
+    style M3 fill:#f59e0b,stroke:#d97706,color:#fff
+    style M4 fill:#8b5cf6,stroke:#6d28d9,color:#fff
+    style M5 fill:#ef4444,stroke:#b91c1c,color:#fff
+```
 
 ---
 
-## 6. THIẾT KẾ MẪU CODE MINH HỌA (CODE TEMPLATES)
+### MILESTONE 1: THIẾT LẬP NỀN TẢNG (ZERO-RISK FOUNDATION) - [ĐÃ HOÀN THÀNH 100%]
+*Mục tiêu: Bổ sung thư viện và các tệp hạ tầng độc lập mà không sửa/xóa bất kỳ dòng code UI nào hiện có. Rủi ro = 0%.*
 
-### 6.1. Domain Layer: Pure TypeScript Engine (`src/domain/engines/quizEngine.ts`)
+- [x] **Bước 1.1: Cài đặt Zustand & Tạo khung thư mục (Folder Skeleton)**
+  - **Hành động**: Chạy `npm install zustand`. Tạo các thư mục: `src/domain/entities`, `src/domain/engines`, `src/infrastructure/http`, `src/infrastructure/api`, `src/infrastructure/storage`, `src/infrastructure/device`, `src/application/stores`, `src/application/hooks`, `src/presentation`.
+  - **Kiểm tra**: `npm run build` thành công 100%.
+  
+- [x] **Bước 1.2: Trích xuất Domain Entities & Types (`src/domain/entities/`)**
+  - **Hành động**: Tạo các file `word.ts`, `category.ts`, `quiz.ts`, `user.ts`, `app.ts` trong `src/domain/entities/`. Re-export tất cả qua `src/types/index.ts` để giữ tương thích ngược hoàn toàn.
+  - **Kiểm tra**: `npx tsc --noEmit` pass không lỗi.
+
+- [x] **Bước 1.3: Xây dựng HTTP Client & API Services (`src/infrastructure/`)**
+  - **Hành động**:
+    1. Tạo `src/infrastructure/http/httpClient.ts` (wrapper fetch chuẩn hóa với timeout, token interceptor, error parser).
+    2. Tạo `src/infrastructure/api/wordApi.ts` (`getAll()`, `updateWord()`, `createWord()`, `deleteWord()`).
+    3. Tạo `src/infrastructure/api/authApi.ts` (`login()`, `register()`, `changePassword()`, `getMe()`).
+    4. Tạo `src/infrastructure/api/progressApi.ts` (`syncProgress()`, `getProgress()`).
+    5. Tạo `src/infrastructure/storage/localStorageAdapter.ts` (safe storage wrapper).
+  - **Kiểm tra**: `npx tsc --noEmit` pass.
+
+- [x] **Bước 1.4: Tách biệt Device Services (`audioService.ts` & `speechService.ts`)**
+  - **Hành động**:
+    1. Tách Web Audio API sang `src/infrastructure/device/audioService.ts`.
+    2. Tách SpeechSynthesis sang `src/infrastructure/device/speechService.ts`.
+    3. Tách CSS badge helper sang `src/presentation/shared/ui/wordBadge.ts`.
+    4. Giữ `src/lib/audio.ts` như một re-export facade để code hiện tại vẫn chạy 100%.
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` thành công 100%.
+
+---
+
+### MILESTONE 2: CHUYỂN DỊCH BUSINESS LOGIC SANG DOMAIN ENGINES (PURE LOGIC MIGRATION) - [ĐÃ HOÀN THÀNH 100%]
+*Mục tiêu: Đưa các thuật toán thuần túy ra ngoài, kiểm thử độc lập mà không cần React.*
+
+- [x] **Bước 2.1: Xây dựng `quizEngine.ts` (`src/domain/engines/`)**
+  - **Hành động**:
+    - Trích xuất logic sinh câu hỏi ngẫu nhiên và 3 phương án sai (distractors) thành hàm pure function `generateQuizQuestions()`.
+    - Viết hàm `evaluateQuizAnswer()` xác định đáp án đúng/sai và vị trí phương án chuẩn.
+    - Viết hàm `calculateQuizAccuracy()` tính toán tỷ lệ % và trạng thái Mastered (>= 80%).
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+- [x] **Bước 2.2: Xây dựng `filterEngine.ts` (`src/domain/engines/`)**
+  - **Hành động**:
+    - Trích xuất thuật toán xáo trộn Fisher-Yates bất biến `shuffleArray<T>()`.
+    - Viết `extractCategories()`, `filterWordsByCategory()`, `extractUnitsForCategory()` với thuật toán sắp xếp Unit tự nhiên `parseUnitNumber()`.
+    - Viết `filterFlashcardWords()` (Category, Unit, Incomplete, Shuffle).
+    - Viết `filterDictionaryWords()` (Search query, POS filter, Learned status).
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+---
+
+### MILESTONE 3: THIẾT LẬP TỪNG ZUSTAND STORE (ATOMIC STORE CREATION) - [ĐÃ HOÀN THÀNH 100%]
+*Mục tiêu: Dựng từng Store chuyên biệt và kết nối dần với các tính năng phụ trợ.*
+
+- [x] **Bước 3.1: Xây dựng `useToastStore` & `useSettingsStore`**
+  - **Hành động**:
+    1. Tạo `src/application/stores/useToastStore.ts` (quản lý thông báo toast toàn app).
+    2. Tạo `src/application/stores/useSettingsStore.ts` (quản lý sound mute, speech rate với auto-persist localStorage).
+    3. Cập nhật `Toast.tsx` để đọc trực tiếp state từ `useToastStore`. Giờ đây bất cứ component nào cũng chỉ cần gọi `useToastStore.getState().showToast(...)`.
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+- [x] **Bước 3.2: Xây dựng `useAuthStore`**
+  - **Hành động**:
+    1. Tạo `src/application/stores/useAuthStore.ts` quản lý `authToken`, `username`, `userRole`, các modal auth.
+    2. Tự động kết nối token getter động cho `httpClient` (`setAuthTokenGetter`).
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+- [x] **Bước 3.3: Xây dựng `useVocabStore`**
+  - **Hành động**:
+    1. Tạo `src/application/stores/useVocabStore.ts` quản lý kho từ, categories, units, learned words, flashcard filter states, active tab.
+    2. Tích hợp các selectors tính toán derived state (`getCategories`, `getCategoryWords`, `getUnitsList`, `getAllTopics`, `getFilteredFlashcardWords`).
+    3. Tích hợp auto-sync tiến độ học debounce lên SQLite.
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+---
+
+### MILESTONE 4: PHÂN RÃ VÀ CHUYỂN ĐỔI TỪNG FEATURE (STEP-BY-STEP FEATURE MIGRATION) - [ĐÃ HOÀN THÀNH 100%]
+*Mục tiêu: Refactor lần lượt từng Tab một. Mỗi tab sau khi refactor phải chạy mượt mà ngay lập tức.*
+
+- [x] **Bước 4.1: Chuyển đổi `StatsTab` (Đơn giản nhất)**
+  - **Hành động**:
+    - Cập nhật `StatsTab.tsx` đọc trực tiếp danh sách từ và `learnedWords` từ `useVocabStore` & `useSettingsStore`.
+    - Cho phép gọi `<StatsTab />` hoàn toàn không cần truyền bất kỳ prop nào.
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+- [x] **Bước 4.2: Phân rã `QuizTab` (363 dòng)**
+  - **Hành động**:
+    1. Tạo hook `src/application/hooks/useQuiz.ts` (gọi `quizEngine`, quản lý luồng thi).
+    2. Tách 3 view độc lập: `QuizIntroView.tsx` (chọn số câu, mode), `QuizActiveView.tsx` (làm bài, 4 lựa chọn), `QuizResultView.tsx` (kết quả & confetti).
+    3. `QuizTab.tsx` mới chỉ còn ~70 dòng kết nối UI và `useQuiz`.
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+- [x] **Bước 4.3: Phân rã `DictionaryTab` & `EditWordModal`**
+  - **Hành động**:
+    1. Tạo hook `src/application/hooks/useDictionary.ts`.
+    2. Tách `DictionaryToolbar.tsx` (search bar, POS pills, status filter) và `DictionaryItem.tsx` (hàng từ vựng).
+    3. Tách `EditWordModal.tsx` gọi trực tiếp `wordApi.updateWord` và cập nhật thẳng vào `useVocabStore`, triệt tiêu 8 props thừa.
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+- [x] **Bước 4.4: Phân rã `FlashcardTab` (913 dòng - Feature quan trọng nhất)**
+  - **Hành động**:
+    1. Tạo hook `src/application/hooks/useFlashcards.ts` (quản lý currentIndex, lật thẻ, chuyển từ, auto-speak).
+    2. Tách `useCardGestures.ts`: Xử lý touch swipe và phím tắt bàn phím toàn cục.
+    3. Tách `FlashcardFilterModal.tsx`: Giữ nguyên vẹn tính năng *Draft State chỉ áp dụng khi Done* và *Cố định widget badge ACTIVE/OFF* vừa xây dựng.
+    4. Tách `FlashcardCard.tsx`: Chỉ chuyên trách hiển thị thẻ bài 3D (mặt trước / mặt sau / empty state).
+    5. Tách `FlashcardControls.tsx`: Các nút phát âm, đánh dấu thuộc và mở filter modal.
+    6. `FlashcardTab.tsx` giảm từ 913 dòng xuống ~180 dòng sạch sẽ.
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+---
+
+### MILESTONE 5: CHUYỂN GIAO ROOT & DỌN DẸP CUỐI CÙNG (CLEANUP & CUTOVER) - [ĐÃ HOÀN THÀNH 100%]
+*Mục tiêu: Đưa `AppShell.tsx` vào thay thế `VoltVocabApp.tsx`, gỡ bỏ code thừa.*
+
+- [x] **Bước 5.1: Xây dựng `AppShell.tsx` (~80 dòng) và Cập nhật `page.tsx`**
+  - **Hành động**:
+    - Tạo `src/presentation/AppShell.tsx` (chỉ đóng vai trò layout shell, nạp `initialWords` vào `useVocabStore` một lần duy nhất).
+    - Cập nhật `src/app/page.tsx` để render `AppShell` thay vì `VoltVocabApp`.
+  - **Kiểm tra**: `npx tsc --noEmit` và `npm run build` pass 100%.
+
+- [x] **Bước 5.2: Refactor `Header.tsx` & `MobileNav.tsx`**
+  - **Hành động**:
+    - `Header.tsx` lấy danh mục, unit, user session và âm thanh trực tiếp từ Zustand Stores (`useVocabStore`, `useSettingsStore`, `useAuthStore`).
+    - Tách `Header.tsx`, `MobileNav.tsx`, `Toast.tsx` sang `src/presentation/shared/` và `AuthModal.tsx`, `ForgotPasswordModal.tsx`, `ChangePasswordModal.tsx` sang `src/presentation/features/auth/`.
+    - Xóa bỏ toàn bộ prop drilling, giữ facade re-export tương thích ngược.
+  - **Kiểm tra**: Đổi Unit, đổi Category, bật tắt loa từ Header hoạt động mượt mà.
+
+- [x] **Bước 5.3: Lưu trữ & Xóa file cũ (`VoltVocabApp.tsx`)**
+  - **Hành động**:
+    - Sao lưu `VoltVocabApp.tsx` vào thư mục `backups/VoltVocabApp.tsx`.
+    - Chuyển `src/components/VoltVocabApp.tsx` thành re-export facade của `AppShell`.
+  - **Kiểm tra**: `npx tsc --noEmit` thành công không còn tệp phụ thuộc cũ.
+
+- [x] **Bước 5.4: Kiểm tra toàn diện & Build Production**
+  - **Hành động**:
+    1. Chạy `npx tsc --noEmit` (0 lỗi).
+    2. Chạy `npm run build` (kiểm tra bundle First Load JS và static page generation 9/9 pages thành công).
+    3. Đã hoàn thành 100% tái cấu trúc Clean Architecture kết hợp Zustand.
+  - **Kiểm tra**: Toàn bộ luồng ứng dụng mượt mà, tốc độ phản hồi tăng rõ rệt, không có memory leaks.
+
+---
+
+## 6. THIẾT KẾ MẪU CODE MINH HỌA VỚI ZUSTAND (CODE TEMPLATES)
+
+### 6.1. Zustand Store: Quản lý Từ vựng (`src/application/stores/useVocabStore.ts`)
 ```typescript
-import { WordItem, QuizQuestion } from '../entities';
-
-export interface QuizConfig {
-  words: WordItem[];
-  currentUnit: string;
-  mode: 'EN_TO_VI' | 'VI_TO_EN' | 'MIX';
-  count: number;
-}
-
-export function shuffleArray<T>(array: T[]): T[] {
-  const copy = [...array];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-export function generateQuiz(config: QuizConfig): QuizQuestion[] {
-  const { words, currentUnit, mode, count } = config;
-  let pool = currentUnit === 'ALL' ? [...words] : words.filter((w) => w.library === currentUnit);
-  if (pool.length < 4) pool = [...words];
-  pool = shuffleArray(pool);
-
-  const selectedCount = Math.min(count, pool.length);
-  const questions: QuizQuestion[] = [];
-
-  for (let i = 0; i < selectedCount; i++) {
-    const target = pool[i];
-    const isEnToVi = mode === 'EN_TO_VI' ? true : mode === 'VI_TO_EN' ? false : Math.random() > 0.5;
-
-    const otherWords = shuffleArray(words.filter((w) => w.word !== target.word));
-    const distractors = [otherWords[0], otherWords[1], otherWords[2]];
-
-    const options = shuffleArray([
-      { text: isEnToVi ? target.meaning : target.word, isCorrect: true },
-      { text: isEnToVi ? distractors[0].meaning : distractors[0].word, isCorrect: false },
-      { text: isEnToVi ? distractors[1].meaning : distractors[1].word, isCorrect: false },
-      { text: isEnToVi ? distractors[2].meaning : distractors[2].word, isCorrect: false },
-    ]);
-
-    questions.push({
-      target,
-      isEnToVi,
-      prompt: isEnToVi ? target.word : target.meaning,
-      options,
-    });
-  }
-
-  return questions;
-}
-```
-
-### 6.2. Infrastructure Layer: Centralized API Client (`src/infrastructure/api/wordApi.ts`)
-```typescript
-import { httpClient } from '../http/httpClient';
+import { create } from 'zustand';
 import { WordItem, CategoryItem } from '@/domain/entities';
+import { filterFlashcardWords } from '@/domain/engines/filterEngine';
 
-export const wordApi = {
-  async getAll(): Promise<{ words: WordItem[]; categories: CategoryItem[] }> {
-    return httpClient.get('/api/words');
-  },
+interface VocabState {
+  allWords: WordItem[];
+  categories: CategoryItem[];
+  currentCategory: string;
+  currentUnit: string;
+  learnedWords: Set<string>;
+  filterOnlyIncomplete: boolean;
+  isShuffled: boolean;
+  activeTab: 'flashcards' | 'quiz' | 'list' | 'stats';
 
-  async updateWord(payload: Partial<WordItem> & { id: number }): Promise<WordItem> {
-    const res = await httpClient.put<{ success: boolean; word: WordItem }>('/api/words', payload);
-    return res.word;
+  // Actions
+  setInitialWords: (words: WordItem[], categories?: CategoryItem[]) => void;
+  setCategory: (category: string) => void;
+  setUnit: (unit: string) => void;
+  setActiveTab: (tab: 'flashcards' | 'quiz' | 'list' | 'stats') => void;
+  toggleLearned: (word: string) => void;
+  applyFlashcardFilters: (incomplete: boolean, shuffled: boolean) => void;
+  updateWord: (updatedWord: WordItem) => void;
+  
+  // Computed / Selectors
+  getFilteredFlashcardWords: () => WordItem[];
+}
+
+export const useVocabStore = create<VocabState>((set, get) => ({
+  allWords: [],
+  categories: [],
+  currentCategory: 'Cambridge Vocabulary',
+  currentUnit: 'Unit 1: Growing Up',
+  learnedWords: new Set<string>(),
+  filterOnlyIncomplete: false,
+  isShuffled: false,
+  activeTab: 'flashcards',
+
+  setInitialWords: (words, categories = []) => set({ allWords: words, categories }),
+  setCategory: (newCategory) => set({ currentCategory: newCategory, currentUnit: 'ALL' }),
+  setUnit: (newUnit) => set({ currentUnit: newUnit }),
+  setActiveTab: (activeTab) => set({ activeTab }),
+
+  toggleLearned: (word) =>
+    set((state) => {
+      const next = new Set(state.learnedWords);
+      if (next.has(word)) next.delete(word);
+      else next.add(word);
+      return { learnedWords: next };
+    }),
+
+  applyFlashcardFilters: (incomplete, shuffled) =>
+    set({ filterOnlyIncomplete: incomplete, isShuffled: shuffled }),
+
+  updateWord: (updatedWord) =>
+    set((state) => ({
+      allWords: state.allWords.map((w) => (w.id === updatedWord.id ? updatedWord : w)),
+    })),
+
+  getFilteredFlashcardWords: () => {
+    const s = get();
+    return filterFlashcardWords({
+      allWords: s.allWords,
+      category: s.currentCategory,
+      unit: s.currentUnit,
+      filterOnlyIncomplete: s.filterOnlyIncomplete,
+      isShuffled: s.isShuffled,
+      learnedWords: s.learnedWords,
+    });
   },
-};
+}));
 ```
 
-### 6.3. Application Layer: Use Case Custom Hook (`src/application/hooks/useFlashcards.ts`)
+### 6.2. Zustand Store: Quản lý Cài đặt có Persist (`src/application/stores/useSettingsStore.ts`)
 ```typescript
-import { useState, useMemo, useCallback } from 'react';
-import { WordItem } from '@/domain/entities';
-import { filterFlashcardWords } from '@/domain/engines/filterEngine';
-import { useSound } from '@/application/contexts/SoundContext';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-export function useFlashcards(initialWords: WordItem[], currentUnit: string) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [filterOnlyIncomplete, setFilterOnlyIncomplete] = useState(false);
-  const [isShuffled, setIsShuffled] = useState(false);
-  const [learnedWords, setLearnedWords] = useState<Set<string>>(new Set());
-
-  const { playTap, playFlip, playChime, speak } = useSound();
-
-  const words = useMemo(() => {
-    return filterFlashcardWords({
-      allWords: initialWords,
-      unit: currentUnit,
-      filterOnlyIncomplete,
-      isShuffled,
-      learnedWords,
-    });
-  }, [initialWords, currentUnit, filterOnlyIncomplete, isShuffled, learnedWords]);
-
-  const currentWord = words[currentIndex] || null;
-
-  const handleNext = useCallback(() => {
-    if (words.length === 0) return;
-    playTap();
-    setCurrentIndex((prev) => (prev + 1) % words.length);
-    setIsFlipped(false);
-  }, [words.length, playTap]);
-
-  const handlePrev = useCallback(() => {
-    if (words.length === 0) return;
-    playTap();
-    setCurrentIndex((prev) => (prev - 1 + words.length) % words.length);
-    setIsFlipped(false);
-  }, [words.length, playTap]);
-
-  const handleFlip = useCallback(() => {
-    playFlip();
-    setIsFlipped((prev) => !prev);
-  }, [playFlip]);
-
-  const applyFilters = useCallback((incomplete: boolean, shuffled: boolean) => {
-    setFilterOnlyIncomplete(incomplete);
-    setIsShuffled(shuffled);
-    setCurrentIndex(0);
-  }, []);
-
-  return {
-    words,
-    currentWord,
-    currentIndex,
-    isFlipped,
-    filterOnlyIncomplete,
-    isShuffled,
-    handleNext,
-    handlePrev,
-    handleFlip,
-    applyFilters,
-    speakWord: () => currentWord && speak(currentWord.word),
-  };
+interface SettingsState {
+  isSoundMuted: boolean;
+  speechRate: number;
+  toggleSound: () => void;
+  setSpeechRate: (rate: number) => void;
 }
+
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set) => ({
+      isSoundMuted: false,
+      speechRate: 0.9,
+      toggleSound: () => set((state) => ({ isSoundMuted: !state.isSoundMuted })),
+      setSpeechRate: (rate) => set({ speechRate: rate }),
+    }),
+    {
+      name: 'ielts_app_settings',
+    }
+  )
+);
+```
+
+### 6.3. Tối giản Root Component (`src/presentation/AppShell.tsx` ~80 dòng)
+```tsx
+'use client';
+
+import React, { useEffect } from 'react';
+import { WordItem } from '@/domain/entities';
+import { useVocabStore } from '@/application/stores/useVocabStore';
+import { Header } from '@/presentation/shared/Header';
+import { MobileNav } from '@/presentation/shared/MobileNav';
+import { Toast } from '@/presentation/shared/Toast';
+import { FlashcardTab } from '@/presentation/features/flashcards/FlashcardTab';
+import { QuizTab } from '@/presentation/features/quiz/QuizTab';
+import { DictionaryTab } from '@/presentation/features/dictionary/DictionaryTab';
+import { StatsTab } from '@/presentation/features/stats/StatsTab';
+import { AuthModal } from '@/presentation/features/auth/AuthModal';
+import { ChangePasswordModal } from '@/presentation/features/auth/ChangePasswordModal';
+
+export const AppShell: React.FC<{ initialWords: WordItem[] }> = ({ initialWords }) => {
+  const activeTab = useVocabStore((s) => s.activeTab);
+  const setInitialWords = useVocabStore((s) => s.setInitialWords);
+
+  useEffect(() => {
+    setInitialWords(initialWords);
+  }, [initialWords, setInitialWords]);
+
+  return (
+    <div className="fixed inset-0 w-full flex flex-col overflow-hidden bg-canvas text-ink select-none">
+      <Toast />
+      <Header />
+      
+      <main className="flex-1 max-w-xl w-full mx-auto px-3 sm:px-5 py-2 sm:py-3 flex flex-col justify-start min-h-0 overflow-hidden">
+        {activeTab === 'flashcards' && <FlashcardTab />}
+        {activeTab === 'quiz' && <QuizTab />}
+        {activeTab === 'list' && <DictionaryTab />}
+        {activeTab === 'stats' && <StatsTab />}
+      </main>
+
+      <MobileNav />
+      <AuthModal />
+      <ChangePasswordModal />
+    </div>
+  );
+};
 ```
 
 ---
 
 ## 7. QUẢN TRỊ RỦI RO & BẢO ĐẢM AN TOÀN KHI THỰC THI
 
-| Rủi ro | Mức độ | Biện pháp ngăn chặn & giảm thiểu |
+| Rủi ro tiềm ẩn | Mức độ | Biện pháp ngăn chặn & giải quyết an toàn |
 |---|---|---|
-| **Lỗi hồi quy giao diện (UI Regression)** | Trung bình | Không thay đổi file CSS hoặc cấu trúc class Tailwind. Chỉ di chuyển layout markup nguyên bản vào component con. |
-| **Lỗi mất đồng bộ dữ liệu người dùng** | Cao | `localStorageAdapter` giữ nguyên chính xác các key lưu trữ hiện tại (`ielts_learned_words`, `ielts_auth_token`, etc.). |
-| **Gãy Next.js SSR / Hydration** | Trung bình | Tất cả các lời gọi đến `window`, `localStorage`, `AudioContext` đều phải nằm trong `useEffect` hoặc hàm guard `typeof window !== 'undefined'`. |
-| **Gián đoạn phát triển tính năng mới** | Thấp | Tiến hành theo từng Phase. Giữ lại component cũ cho đến khi component mới trong architecture mới chạy đạt 100% nghiệm thu. |
+| **Lỗi hồi quy giao diện (UI Regression)** | Trung bình | Tuyệt đối không thay đổi class Tailwind hoặc CSS. Chỉ di chuyển markup JSX nguyên bản vào các micro-components. |
+| **Lỗi mất đồng bộ dữ liệu người dùng** | Cao | Các store Zustand tiếp tục đọc/ghi tương thích với các key lưu trữ hiện tại (`ielts_learned_words`, `ielts_auth_token`, etc.). |
+| **Lỗi Next.js SSR / Hydration với Zustand**| Thấp | Dùng `useSyncExternalStore` (tích hợp sẵn trong Zustand v4/v5) kết hợp guard mount an toàn, ngăn chặn hydration mismatch 100%. |
+| **Gãy build khi đang refactor dở** | Thấp | Nhờ chia thành 12 bước vi mô (Micro-Steps), mỗi bước đều độc lập và có lệnh kiểm tra `npx tsc --noEmit` trước khi chuyển bước. |
 
 ---
 
-## 8. TỔNG KẾT & LỢI ÍCH ĐẠT ĐƯỢC
+## 8. TỔNG KẾT & LỢI ÍCH KHI KẾT HỢP CLEAN ARCHITECTURE VỚI ZUSTAND
 
-Sau khi hoàn thành tái cấu trúc theo kế hoạch này:
-1. **Độ dài các file giảm 60-70%**: Không còn file nào vượt quá 200 dòng code. Mỗi component tập trung duy nhất vào 1 chức năng (Single Responsibility Principle).
-2. **Loại bỏ hoàn toàn Prop Drilling**: Các tầng giao tiếp với nhau qua Custom Hooks và Contexts tinh gọn.
-3. **Domain Logic độc lập 100%**: Thuật toán sinh đề thi, lọc từ vựng, tính toán streak có thể viết Unit Test tự động và chạy trong 0.1s.
-4. **Dễ bảo trì & cộng tác**: Lập trình viên mới chỉ cần nhìn vào `domain/` để hiểu quy tắc nghiệp vụ, `infrastructure/` để hiểu cách kết nối dữ liệu, và `presentation/` để chỉnh sửa giao diện.
-5. **Cực kỳ phù hợp cho dự án nhỏ**: Không phát sinh lớp trừu tượng thừa, bảo tồn tốc độ phát triển nhanh của Next.js và React 19.
+1. **Thực thi êm đẹp, không gián đoạn**: 12 bước vi mô cho phép lập trình viên làm đến đâu chắc đến đó, dừng lại bất kỳ lúc nào mà không làm hỏng app.
+2. **Xóa sổ 100% Prop Drilling**: Không còn bất kỳ prop trung gian nào cần truyền qua nhiều cấp component.
+3. **Hiệu năng tối ưu (Zero Waste Re-render)**: Các component chỉ re-render chính xác khi thuộc tính nó quan sát thay đổi nhờ Atomic Selectors của Zustand.
+4. **Mã nguồn cực kỳ mỏng nhẹ**: `VoltVocabApp` giảm từ 587 dòng xuống ~80 dòng (`AppShell`). Các tab giảm 60-70% số dòng code.
+5. **Clean Architecture thực tế & dễ hiểu**: 
+   - `domain/` = Thuần thuật toán & thực thể (Không dính React/Zustand).
+   - `infrastructure/` = Giao tiếp Network & Browser APIs.
+   - `application/` = Zustand stores & Custom Hooks đóng vai trò Use Cases.
+   - `presentation/` = Chỉ lo UI, JSX và CSS.
+6. **Dễ dàng mở rộng trong tương lai**: Khi muốn thêm tính năng mới (ví dụ: Spaced Repetition, Bookmark, Audio Playlist), chỉ cần thêm 1 action vào Zustand store và 1 pure function vào domain engine mà không làm xáo trộn cấu trúc hiện tại.

@@ -1,20 +1,26 @@
 'use client';
 
 import React from 'react';
-import { TabType } from '@/types';
-import { playTapSound } from '@/lib/audio';
+import { TabType } from '@/domain/entities';
+import { playTapSound } from '@/infrastructure/device/audioService';
+import { useVocabStore } from '@/application/stores/useVocabStore';
+import { useSettingsStore } from '@/application/stores/useSettingsStore';
 
-interface MobileNavProps {
-  activeTab: TabType;
-  onTabChange: (tab: TabType) => void;
-  isSoundMuted: boolean;
+export interface MobileNavProps {
+  activeTab?: TabType;
+  onTabChange?: (tab: TabType) => void;
+  isSoundMuted?: boolean;
 }
 
-export const MobileNav: React.FC<MobileNavProps> = ({
-  activeTab,
-  onTabChange,
-  isSoundMuted,
-}) => {
+export const MobileNav: React.FC<MobileNavProps> = (props) => {
+  const storeActiveTab = useVocabStore((s) => s.activeTab);
+  const storeSetActiveTab = useVocabStore((s) => s.setActiveTab);
+  const storeIsMuted = useSettingsStore((s) => s.isSoundMuted);
+
+  const activeTab = props.activeTab ?? storeActiveTab;
+  const onTabChange = props.onTabChange ?? storeSetActiveTab;
+  const isSoundMuted = props.isSoundMuted !== undefined ? props.isSoundMuted : storeIsMuted;
+
   return (
     <footer className="md:hidden flex-shrink-0 w-full bg-canvas/95 backdrop-blur-md border-t border-hairline px-3 pt-1 pb-[max(0.375rem,env(safe-area-inset-bottom,0px))] flex items-center justify-around font-mono z-30">
       <button

@@ -65,8 +65,8 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS progress (
     user_id INTEGER PRIMARY KEY,
-    current_category TEXT DEFAULT 'Cambridge Vocabulary',
-    current_unit TEXT DEFAULT 'Unit 1: Growing Up',
+    current_category TEXT,
+    current_unit TEXT,
     current_index INTEGER DEFAULT 0,
     quiz_stats TEXT DEFAULT '{}',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -89,8 +89,7 @@ db.prepare(`
 // Ensure current_category column exists in progress table
 const progressCols = db.prepare("PRAGMA table_info(progress)").all();
 if (!progressCols.some((c) => c.name === 'current_category')) {
-  db.exec("ALTER TABLE progress ADD COLUMN current_category TEXT DEFAULT 'Cambridge Vocabulary';");
-  db.exec("UPDATE progress SET current_category = 'Cambridge Vocabulary' WHERE current_category IS NULL;");
+  db.exec("ALTER TABLE progress ADD COLUMN current_category TEXT;");
 }
 
 // 3. Auto-seed words from words.sql if words table is empty

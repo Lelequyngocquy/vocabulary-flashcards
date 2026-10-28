@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getProgress } from '@/lib/db';
+import { getProgress, getDefaultCategory, getDefaultTopic } from '@/lib/db';
 import { getUserFromRequest } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const user = getUserFromRequest(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Chưa đăng nhập hoặc token không hợp lệ' },
+        { success: false, error: 'Not authenticated or invalid token.' },
         { status: 401 }
       );
     }
@@ -34,9 +34,12 @@ export async function GET(request: Request) {
       quizStats = {};
     }
 
+    const defaultCat = getDefaultCategory();
+    const defaultTopic = getDefaultTopic(defaultCat.id);
+
     const progressData = {
-      current_category: p?.current_category || 'Cambridge Vocabulary',
-      current_unit: p ? p.current_unit : 'Unit 1: Growing Up',
+      current_category: p?.current_category || defaultCat.category,
+      current_unit: p?.current_unit || defaultTopic,
       current_index: p ? p.current_index : 0,
       learned_words: learnedWords,
       quiz_stats: quizStats,
@@ -53,7 +56,7 @@ export async function GET(request: Request) {
   } catch (error: unknown) {
     const err = error as Error;
     return NextResponse.json(
-      { success: false, error: `Lỗi hệ thống: ${err.message || 'Unknown error'}` },
+      { success: false, error: `System error: ${err.message || 'Unknown error'}` },
       { status: 500 }
     );
   }

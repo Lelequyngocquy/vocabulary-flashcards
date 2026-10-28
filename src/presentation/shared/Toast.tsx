@@ -1,14 +1,23 @@
 'use client';
 
 import React from 'react';
+import { useToastStore } from '@/application/stores/useToastStore';
 
-interface ToastProps {
-  message: string;
-  visible: boolean;
+export interface ToastProps {
+  message?: string;
+  visible?: boolean;
   isError?: boolean;
 }
 
-export const Toast: React.FC<ToastProps> = ({ message, visible, isError = false }) => {
+export const Toast: React.FC<ToastProps> = (props) => {
+  const storeMessage = useToastStore((s) => s.message);
+  const storeVisible = useToastStore((s) => s.visible);
+  const storeIsError = useToastStore((s) => s.isError);
+
+  const visible = props.visible !== undefined ? props.visible : storeVisible;
+  const message = props.message !== undefined ? props.message : storeMessage;
+  const isError = props.isError !== undefined ? props.isError : storeIsError;
+
   return (
     <div
       id="syncToast"

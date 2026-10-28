@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'IELTS Vocab Mastery | Voltagent Engineering Design',
   description:
-    'Nền tảng học từ vựng IELTS phong cách Voltagent: Dark canvas #101010, Electric Green #00d992, Hairline #3d3a39, tối ưu di động',
+    'IELTS vocabulary learning platform in Voltagent style: Dark canvas #101010, Electric Green #00d992, Hairline #3d3a39, mobile-optimized',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -40,8 +40,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className={`dark ${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="bg-canvas text-ink antialiased selection:bg-primary/20 selection:text-primary w-full h-full overflow-hidden">
+    <html lang="en" suppressHydrationWarning className={`dark ${inter.variable} ${jetbrainsMono.variable}`}>
+      <body suppressHydrationWarning className="bg-canvas text-ink antialiased selection:bg-primary/20 selection:text-primary w-full h-full overflow-hidden">
         {children}
       </body>
     </html>

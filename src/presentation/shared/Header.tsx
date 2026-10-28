@@ -1,42 +1,88 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { TabType } from '@/types';
-import { playTapSound } from '@/lib/audio';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { TabType } from '@/domain/entities';
+import {
+  extractCategories,
+  filterWordsByCategory,
+  extractUnitsForCategory,
+} from '@/domain/engines/filterEngine';
+import { playTapSound } from '@/infrastructure/device/audioService';
+import { useVocabStore } from '@/application/stores/useVocabStore';
+import { useSettingsStore } from '@/application/stores/useSettingsStore';
+import { useAuthStore } from '@/application/stores/useAuthStore';
+import { useToastStore } from '@/application/stores/useToastStore';
 
-interface HeaderProps {
-  currentCategory: string;
-  categoriesList: { id: number; category: string; display_order?: number }[];
-  onCategoryChange: (category: string) => void;
-  currentUnit: string;
-  unitsList: { name: string; count: number }[];
-  onUnitChange: (unit: string) => void;
-  activeTab: TabType;
-  onTabChange: (tab: TabType) => void;
-  isSoundMuted: boolean;
-  onToggleSound: () => void;
-  username: string | null;
-  onOpenAuth: () => void;
-  onOpenChangePassword: () => void;
-  onLogout: () => void;
+export interface HeaderProps {
+  currentCategory?: string;
+  categoriesList?: { id: number; category: string; display_order?: number }[];
+  onCategoryChange?: (category: string) => void;
+  currentUnit?: string;
+  unitsList?: { name: string; count: number }[];
+  onUnitChange?: (unit: string) => void;
+  activeTab?: TabType;
+  onTabChange?: (tab: TabType) => void;
+  isSoundMuted?: boolean;
+  onToggleSound?: () => void;
+  username?: string | null;
+  onOpenAuth?: () => void;
+  onOpenChangePassword?: () => void;
+  onLogout?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  currentCategory,
-  categoriesList,
-  onCategoryChange,
-  currentUnit,
-  unitsList,
-  onUnitChange,
-  activeTab,
-  onTabChange,
-  isSoundMuted,
-  onToggleSound,
-  username,
-  onOpenAuth,
-  onOpenChangePassword,
-  onLogout,
-}) => {
+export const Header: React.FC<HeaderProps> = (props) => {
+  const storeAllWords = useVocabStore((s) => s.allWords);
+  const storeCategoriesList = useVocabStore((s) => s.categoriesList);
+  const storeCategory = useVocabStore((s) => s.currentCategory);
+  const storeSetCategory = useVocabStore((s) => s.setCategory);
+  const storeUnit = useVocabStore((s) => s.currentUnit);
+  const storeSetUnit = useVocabStore((s) => s.setUnit);
+  const storeActiveTab = useVocabStore((s) => s.activeTab);
+  const storeSetActiveTab = useVocabStore((s) => s.setActiveTab);
+
+  const derivedCategories = useMemo(
+    () => extractCategories(storeAllWords, storeCategoriesList),
+    [storeAllWords, storeCategoriesList]
+  );
+
+  const derivedUnits = useMemo(() => {
+    const catWords = filterWordsByCategory(storeAllWords, storeCategory);
+    return extractUnitsForCategory(catWords);
+  }, [storeAllWords, storeCategory]);
+
+  const storeIsMuted = useSettingsStore((s) => s.isSoundMuted);
+  const storeToggleSound = useSettingsStore((s) => s.toggleSound);
+
+  const storeUsername = useAuthStore((s) => s.username);
+  const storeOpenAuth = useAuthStore((s) => s.openAuthModal);
+  const storeOpenChangePassword = useAuthStore((s) => s.openChangePasswordModal);
+  const storeLogout = useAuthStore((s) => s.logout);
+
+  const currentCategory = props.currentCategory ?? storeCategory;
+  const categoriesList = props.categoriesList ?? derivedCategories;
+  const onCategoryChange = props.onCategoryChange ?? storeSetCategory;
+  const currentUnit = props.currentUnit ?? storeUnit;
+  const unitsList = props.unitsList ?? derivedUnits;
+  const onUnitChange = props.onUnitChange ?? storeSetUnit;
+  const activeTab = props.activeTab ?? storeActiveTab;
+  const onTabChange = props.onTabChange ?? storeSetActiveTab;
+
+  const isSoundMuted = props.isSoundMuted !== undefined ? props.isSoundMuted : storeIsMuted;
+  const onToggleSound = props.onToggleSound ?? storeToggleSound;
+
+  const username = props.username !== undefined ? props.username : storeUsername;
+  const onOpenAuth = props.onOpenAuth ?? storeOpenAuth;
+  const onOpenChangePassword = props.onOpenChangePassword ?? storeOpenChangePassword;
+  const onLogout =
+    props.onLogout ??
+    (() => {
+      if (confirm('Disconnect session and log out?')) {
+        storeLogout();
+        playTapSound(isSoundMuted);
+        useToastStore.getState().showToast('DISCONNECTED');
+      }
+    });
+
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const totalWords = unitsList.reduce((acc, u) => acc + u.count, 0);
+  const totalWords = unitsList.reduce((acc, u) => acc + (u.count || 0), 0);
 
   return (
     <header className="sticky top-0 z-40 bg-canvas border-b border-hairline px-3 py-2 sm:px-6 pt-[max(0.5rem,env(safe-area-inset-top,0px))] flex-shrink-0">
@@ -159,7 +205,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onOpenAuth();
                 }}
                 id="btnLoginHeader"
-                className="py-1.5 px-3 rounded-[6px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs shadow-sm transition-all tap-bounce flex items-center gap-1 font-mono"
+                className="py-1.5 px-3 rounded-[6px] bg-primary hover:bg-primary-soft text-primary-on font-semibold text-xs shadow-sm transition-all tap-bounce flex items-center gap-1 font-mono cursor-pointer"
               >
                 <span>LOGIN</span>
               </button>
@@ -241,7 +287,7 @@ export const Header: React.FC<HeaderProps> = ({
                 playTapSound(isSoundMuted);
                 onTabChange('flashcards');
               }}
-              className={`px-3 py-1 rounded-[4px] transition-all ${
+              className={`px-3 py-1 rounded-[4px] transition-all cursor-pointer ${
                 activeTab === 'flashcards'
                   ? 'bg-primary text-primary-on font-semibold'
                   : 'text-body hover:text-ink'
@@ -255,7 +301,7 @@ export const Header: React.FC<HeaderProps> = ({
                 playTapSound(isSoundMuted);
                 onTabChange('quiz');
               }}
-              className={`px-3 py-1 rounded-[4px] transition-all ${
+              className={`px-3 py-1 rounded-[4px] transition-all cursor-pointer ${
                 activeTab === 'quiz'
                   ? 'bg-primary text-primary-on font-semibold'
                   : 'text-body hover:text-ink'
@@ -269,7 +315,7 @@ export const Header: React.FC<HeaderProps> = ({
                 playTapSound(isSoundMuted);
                 onTabChange('list');
               }}
-              className={`px-3 py-1 rounded-[4px] transition-all ${
+              className={`px-3 py-1 rounded-[4px] transition-all cursor-pointer ${
                 activeTab === 'list'
                   ? 'bg-primary text-primary-on font-semibold'
                   : 'text-body hover:text-ink'
@@ -283,7 +329,7 @@ export const Header: React.FC<HeaderProps> = ({
                 playTapSound(isSoundMuted);
                 onTabChange('stats');
               }}
-              className={`px-3 py-1 rounded-[4px] transition-all ${
+              className={`px-3 py-1 rounded-[4px] transition-all cursor-pointer ${
                 activeTab === 'stats'
                   ? 'bg-primary text-primary-on font-semibold'
                   : 'text-body hover:text-ink'

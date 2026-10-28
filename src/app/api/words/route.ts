@@ -5,6 +5,8 @@ import {
   getWordById,
   getAllCategories,
   getAllTopics,
+  getDefaultCategory,
+  getDefaultTopic,
   addWord,
   updateWord,
   deleteWord,
@@ -25,7 +27,7 @@ export async function GET(request: Request) {
       const word = getWordById(id);
       if (!word) {
         return NextResponse.json(
-          { success: false, error: `Không tìm thấy từ vựng với id=${id}` },
+          { success: false, error: `Word not found with id=${id}` },
           { status: 404 }
         );
       }
@@ -33,6 +35,8 @@ export async function GET(request: Request) {
     }
 
     const categories = getAllCategories();
+    const defaultCat = getDefaultCategory();
+    const defaultTopic = getDefaultTopic(defaultCat.id);
     const topics = getAllTopics(category || undefined);
     const words = library
       ? getWordsByLibrary(library, category || undefined)
@@ -42,6 +46,8 @@ export async function GET(request: Request) {
       success: true,
       total: words.length,
       categories,
+      defaultCategory: defaultCat.category,
+      defaultUnit: defaultTopic,
       topics,
       words,
     });
@@ -59,23 +65,24 @@ export async function POST(request: Request) {
     const data = await request.json();
     if (!data.word || !data.meaning || !data.library) {
       return NextResponse.json(
-        { success: false, error: 'Vui lòng cung cấp word, meaning và library.' },
+        { success: false, error: 'Please provide word, meaning, and library.' },
         { status: 400 }
       );
     }
 
+    const defaultCat = getDefaultCategory();
     const newWord = addWord({
       word: data.word,
       type: data.type || '',
       meaning: data.meaning,
       example: data.example || '',
       library: data.library,
-      category: data.category || 'Cambridge Vocabulary',
+      category: data.category || defaultCat.category,
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Từ vựng đã được thêm vào cơ sở dữ liệu SQLite.',
+      message: 'Word added to SQLite database successfully.',
       word: newWord,
     });
   } catch (error: unknown) {
@@ -92,7 +99,7 @@ export async function PUT(request: Request) {
     const data = await request.json();
     if (!data.id) {
       return NextResponse.json(
-        { success: false, error: 'Thiếu trường id của từ vựng cần cập nhật.' },
+        { success: false, error: 'Missing id of the vocabulary word to update.' },
         { status: 400 }
       );
     }
@@ -100,22 +107,23 @@ export async function PUT(request: Request) {
     const existing = getWordById(Number(data.id));
     if (!existing) {
       return NextResponse.json(
-        { success: false, error: `Không tìm thấy từ vựng với id=${data.id}` },
+        { success: false, error: `Word not found with id=${data.id}` },
         { status: 404 }
       );
     }
 
-    // Role check: Only admin can modify default Cambridge Vocabulary
+    // Role check: Only admin can modify default category (identified by id in DB)
     const user = getUserFromRequest(request);
     const isAdmin = !!(user && (user.isAdmin || user.role === 'ADMIN' || user.username.toLowerCase() === 'admin'));
+    const defaultCat = getDefaultCategory();
     const isDefaultCategory =
-      existing.category === 'Cambridge Vocabulary' ||
-      data.category === 'Cambridge Vocabulary' ||
-      existing.category_id === 1;
+      existing.category_id === defaultCat.id ||
+      existing.category === defaultCat.category ||
+      data.category === defaultCat.category;
 
     if (isDefaultCategory && !isAdmin) {
       return NextResponse.json(
-        { success: false, error: 'Chỉ tài khoản Admin mới có quyền chỉnh sửa kho từ vựng mặc định (Cambridge Vocabulary).' },
+        { success: false, error: `Only Admin accounts can modify the default category (${defaultCat.category}).` },
         { status: 403 }
       );
     }
@@ -123,7 +131,7 @@ export async function PUT(request: Request) {
     const success = updateWord(Number(data.id), data);
     if (!success) {
       return NextResponse.json(
-        { success: false, error: `Không thể cập nhật từ vựng với id=${data.id}` },
+        { success: false, error: `Unable to update word with id=${data.id}` },
         { status: 500 }
       );
     }
@@ -131,7 +139,7 @@ export async function PUT(request: Request) {
     const updated = getWordById(Number(data.id));
     return NextResponse.json({
       success: true,
-      message: `Đã cập nhật thành công từ vựng id=${data.id}`,
+      message: `Word id=${data.id} updated successfully`,
       word: updated,
     });
   } catch (error: unknown) {
@@ -150,7 +158,7 @@ export async function DELETE(request: Request) {
 
     if (!idParam) {
       return NextResponse.json(
-        { success: false, error: 'Vui lòng cung cấp tham số ?id=... để xóa.' },
+        { success: false, error: 'Please provide ?id=... parameter to delete.' },
         { status: 400 }
       );
     }
@@ -159,17 +167,18 @@ export async function DELETE(request: Request) {
     const existing = getWordById(id);
     if (!existing) {
       return NextResponse.json(
-        { success: false, error: `Không tìm thấy từ vựng với id=${id}` },
+        { success: false, error: `Word not found with id=${id}` },
         { status: 404 }
       );
     }
 
-    // Role check: Only admin can delete default Cambridge Vocabulary
+    // Role check: Only admin can delete default category
     const user = getUserFromRequest(request);
     const isAdmin = !!(user && (user.isAdmin || user.role === 'ADMIN' || user.username.toLowerCase() === 'admin'));
-    if ((existing.category === 'Cambridge Vocabulary' || existing.category_id === 1) && !isAdmin) {
+    const defaultCat = getDefaultCategory();
+    if ((existing.category_id === defaultCat.id || existing.category === defaultCat.category) && !isAdmin) {
       return NextResponse.json(
-        { success: false, error: 'Chỉ tài khoản Admin mới có quyền xóa từ vựng mặc định (Cambridge Vocabulary).' },
+        { success: false, error: `Only Admin accounts can delete from the default category (${defaultCat.category}).` },
         { status: 403 }
       );
     }
@@ -177,14 +186,14 @@ export async function DELETE(request: Request) {
     const success = deleteWord(id);
     if (!success) {
       return NextResponse.json(
-        { success: false, error: `Không thể xóa từ vựng với id=${id}` },
+        { success: false, error: `Unable to delete word with id=${id}` },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: `Đã xóa từ vựng id=${id} khỏi cơ sở dữ liệu SQLite.`,
+      message: `Word id=${id} deleted from SQLite database.`,
     });
   } catch (error: unknown) {
     const err = error as Error;

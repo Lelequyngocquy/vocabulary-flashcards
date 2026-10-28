@@ -11,6 +11,7 @@ $EC2_IP = "13.212.39.124"
 $PEM_KEY = Join-Path $ROOT_DIR "ubuntu02.pem"
 $IMAGE_NAME = "ielts-vocab-app:latest"
 $ARCHIVE_NAME = "ielts-vocab-app.tar.gz"
+$SOURCE_ARCHIVE = "ielts-source.tar.gz"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host ">>> 1. Building Next.js Docker Image LOCALLY (Linux/amd64)..." -ForegroundColor Cyan
@@ -19,20 +20,22 @@ Write-Host "==========================================================" -Foregro
 docker build --platform linux/amd64 -t $IMAGE_NAME .
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host ">>> 2. Compressing Docker image to $ARCHIVE_NAME..." -ForegroundColor Cyan
+Write-Host ">>> 2. Compressing Docker image and source code..." -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 docker save $IMAGE_NAME -o ielts-vocab-app.tar
 tar -czf $ARCHIVE_NAME ielts-vocab-app.tar
 Remove-Item -Force ielts-vocab-app.tar
 
+tar --exclude "node_modules" --exclude ".next" --exclude "backups" --exclude "*.db*" --exclude "ubuntu02.pem" --exclude "*.tar*" -czf $SOURCE_ARCHIVE src public scripts deploy package.json package-lock.json tsconfig.json tailwind.config.ts next.config.mjs Dockerfile README.md
+
 $fileSizeMb = [math]::Round((Get-Item $ARCHIVE_NAME).Length / 1MB, 2)
 Write-Host ">>> Compressed image size: ${fileSizeMb} MB" -ForegroundColor Green
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host ">>> 3. Transferring image to VPS ($EC2_IP)..." -ForegroundColor Cyan
+Write-Host ">>> 3. Transferring image and clean source to VPS ($EC2_IP)..." -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
-scp -i $PEM_KEY -o StrictHostKeyChecking=no $ARCHIVE_NAME ubuntu@${EC2_IP}:/home/ubuntu/
-Remove-Item -Force $ARCHIVE_NAME
+scp -i $PEM_KEY -o StrictHostKeyChecking=no $ARCHIVE_NAME $SOURCE_ARCHIVE ubuntu@${EC2_IP}:/home/ubuntu/
+Remove-Item -Force $ARCHIVE_NAME, $SOURCE_ARCHIVE
 
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host ">>> 4. Deploying Next.js container on VPS..." -ForegroundColor Cyan
@@ -41,18 +44,24 @@ $remoteCommands = @"
   echo '>>> 1. Backing up SQLite database on VPS...'
   cp /home/ubuntu/ielts-data/vocab.db /home/ubuntu/ielts-data/vocab_backup_`$(date +%Y%m%d_%H%M%S).db 2>/dev/null || true
 
-  echo '>>> 2. Unpacking and loading Docker image...'
+  echo '>>> 2. Replacing legacy source code on VPS in /home/ubuntu/ielts-app...'
+  rm -rf /home/ubuntu/ielts-app
+  mkdir -p /home/ubuntu/ielts-app
+  tar -xzf /home/ubuntu/$SOURCE_ARCHIVE -C /home/ubuntu/ielts-app
+  rm -f /home/ubuntu/$SOURCE_ARCHIVE
+
+  echo '>>> 3. Unpacking and loading Docker image...'
   tar -xzf /home/ubuntu/$ARCHIVE_NAME -O | docker load
   rm -f /home/ubuntu/$ARCHIVE_NAME
 
-  echo '>>> 3. Stopping previous container...'
+  echo '>>> 4. Stopping previous container...'
   docker stop ielts-vocab 2>/dev/null || true
   docker rm ielts-vocab 2>/dev/null || true
 
-  echo '>>> 4. Launching Next.js container (1:N Hierarchical Architecture)...'
+  echo '>>> 5. Launching Next.js container (Clean Architecture + Dynamic SQLite)...'
   docker run -d --name ielts-vocab -p 127.0.0.1:5000:80 -v /home/ubuntu/ielts-data:/data --restart always $IMAGE_NAME
 
-  echo '>>> 5. Cleaning up dangling images...'
+  echo '>>> 6. Cleaning up dangling images...'
   docker image prune -f
 
   echo '>>> Container status:'

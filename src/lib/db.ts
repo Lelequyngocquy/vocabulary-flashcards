@@ -108,8 +108,7 @@ function ensureOptimalSchema(db: DatabaseAdapter) {
     if (progressTableCheck) {
       const progressCols = db.prepare("PRAGMA table_info(progress)").all() as { name: string }[];
       if (!progressCols.some((c) => c.name === 'current_category')) {
-        db.exec("ALTER TABLE progress ADD COLUMN current_category TEXT DEFAULT 'Cambridge Vocabulary';");
-        db.exec("UPDATE progress SET current_category = 'Cambridge Vocabulary' WHERE current_category IS NULL;");
+        db.exec("ALTER TABLE progress ADD COLUMN current_category TEXT;");
       }
     }
   } catch (err) {
@@ -283,8 +282,8 @@ function ensureOptimalSchema(db: DatabaseAdapter) {
 
     CREATE TABLE IF NOT EXISTS progress (
       user_id INTEGER PRIMARY KEY,
-      current_category TEXT DEFAULT 'Cambridge Vocabulary',
-      current_unit TEXT DEFAULT 'Unit 1: Growing Up',
+      current_category TEXT,
+      current_unit TEXT,
       current_index INTEGER DEFAULT 0,
       quiz_stats TEXT DEFAULT '{}',
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -346,6 +345,40 @@ export function getAllCategories(): CategoryItem[] {
     ORDER BY c.display_order ASC
   `).all();
   return (rows as CategoryItem[]) || [];
+}
+
+export function getDefaultCategory(): CategoryItem {
+  const db = getDb();
+  let row = db.prepare('SELECT id, category, display_order FROM categories WHERE id = 1').get() as CategoryItem | undefined;
+  if (!row) {
+    row = db.prepare('SELECT id, category, display_order FROM categories ORDER BY display_order ASC, id ASC LIMIT 1').get() as CategoryItem | undefined;
+  }
+  if (!row) {
+    const firstWord = db.prepare('SELECT category FROM words WHERE category IS NOT NULL LIMIT 1').get() as { category: string } | undefined;
+    return {
+      id: 1,
+      category: firstWord?.category || 'General Vocabulary',
+      display_order: 1,
+    };
+  }
+  return row;
+}
+
+export function getDefaultTopic(categoryId?: number): string {
+  const db = getDb();
+  const catId = categoryId ?? getDefaultCategory().id;
+  const row = db.prepare('SELECT name FROM topics WHERE category_id = ? ORDER BY display_order ASC, id ASC LIMIT 1').get(catId) as { name: string } | undefined;
+  if (row?.name) return row.name;
+
+  const wordRow = db.prepare(`
+    SELECT t.name 
+    FROM words w 
+    JOIN topics t ON w.topic_id = t.id 
+    WHERE t.category_id = ? 
+    LIMIT 1
+  `).get(catId) as { name: string } | undefined;
+
+  return wordRow?.name || 'Unit 1';
 }
 
 export function getAllWords(categoryParam?: string): WordItem[] {
@@ -514,7 +547,8 @@ export function addWord(word: Omit<WordItem, 'id' | 'created_at'> & { category?:
   const db = getDb();
 
   // 1. Ensure category exists
-  const categoryName = word.category || 'Cambridge Vocabulary';
+  const defaultCat = getDefaultCategory();
+  const categoryName = word.category || defaultCat.category;
   let cat = db.prepare('SELECT id FROM categories WHERE category = ?').get(categoryName) as { id: number } | undefined;
   if (!cat) {
     const maxOrderRow = db.prepare('SELECT MAX(display_order) as maxOrder FROM categories').get() as { maxOrder: number | null };
@@ -524,11 +558,13 @@ export function addWord(word: Omit<WordItem, 'id' | 'created_at'> & { category?:
   }
 
   // 2. Ensure topic exists within this category
-  let topic = db.prepare('SELECT id FROM topics WHERE category_id = ? AND name = ?').get(cat.id, word.library) as { id: number } | undefined;
+  const defaultTopic = getDefaultTopic(cat.id);
+  const topicName = word.library || defaultTopic;
+  let topic = db.prepare('SELECT id FROM topics WHERE category_id = ? AND name = ?').get(cat.id, topicName) as { id: number } | undefined;
   if (!topic) {
     const maxOrderRow = db.prepare('SELECT MAX(display_order) as maxOrder FROM topics WHERE category_id = ?').get(cat.id) as { maxOrder: number | null };
     const nextOrder = (maxOrderRow?.maxOrder ?? 0) + 1;
-    const res = db.prepare('INSERT INTO topics (category_id, name, display_order) VALUES (?, ?, ?)').run(cat.id, word.library, nextOrder);
+    const res = db.prepare('INSERT INTO topics (category_id, name, display_order) VALUES (?, ?, ?)').run(cat.id, topicName, nextOrder);
     topic = { id: Number(res.lastInsertRowid) };
   }
 
@@ -564,8 +600,10 @@ export function updateWord(id: number, data: Partial<Omit<WordItem, 'id' | 'crea
   const meaning = data.meaning ?? existing.meaning;
   const example = data.example ?? existing.example;
 
-  const targetCategoryName = data.category ?? existing.category ?? 'Cambridge Vocabulary';
-  const targetLibraryName = data.library ?? existing.library ?? 'Unit 1: Growing Up';
+  const defaultCat = getDefaultCategory();
+  const defaultTopic = getDefaultTopic(defaultCat.id);
+  const targetCategoryName = data.category ?? existing.category ?? defaultCat.category;
+  const targetLibraryName = data.library ?? existing.library ?? defaultTopic;
 
   // 1. Ensure target category exists
   let cat = db.prepare('SELECT id FROM categories WHERE category = ?').get(targetCategoryName) as { id: number } | undefined;
@@ -641,9 +679,11 @@ export function createUser(username: string, passwordHash: string, role = 'USER'
   const info = insertUser.run(username, passwordHash, assignedRole);
   const userId = Number(info.lastInsertRowid);
 
-  // Init progress
+  // Init progress with dynamic defaults from database
+  const defaultCat = getDefaultCategory();
+  const defaultTopic = getDefaultTopic(defaultCat.id);
   const insertProg = db.prepare('INSERT INTO progress (user_id, current_category, current_unit, current_index, quiz_stats) VALUES (?, ?, ?, ?, ?)');
-  insertProg.run(userId, 'Cambridge Vocabulary', 'Unit 1: Growing Up', 0, '{}');
+  insertProg.run(userId, defaultCat.category, defaultTopic, 0, '{}');
 
   return { id: userId, username, role: assignedRole };
 }
@@ -734,11 +774,13 @@ export function getProgress(userId: number): ProgressRow | null {
   if (!row) return null;
 
   const learnedWords = getUserLearnedWords(userId);
+  const defaultCat = getDefaultCategory();
+  const defaultTopic = getDefaultTopic(defaultCat.id);
 
   return {
     user_id: row.user_id,
-    current_category: row.current_category || 'Cambridge Vocabulary',
-    current_unit: row.current_unit,
+    current_category: row.current_category || defaultCat.category,
+    current_unit: row.current_unit || defaultTopic,
     current_index: row.current_index,
     learned_words: JSON.stringify(learnedWords),
     quiz_stats: row.quiz_stats,
@@ -756,20 +798,23 @@ export function upsertProgress(
 ): void {
   const db = getDb();
 
-  let currentCategory = 'Cambridge Vocabulary';
-  let currentUnit = 'Unit 1: Growing Up';
+  const defaultCat = getDefaultCategory();
+  const defaultTopic = getDefaultTopic(defaultCat.id);
+
+  let currentCategory = defaultCat.category;
+  let currentUnit = defaultTopic;
   let currentIndex = 0;
   let learnedWordsParam: string | string[] = [];
   let quizStats = '{}';
 
   if (typeof currentUnitOrIndex === 'string') {
-    currentCategory = currentCategoryOrUnit || 'Cambridge Vocabulary';
+    currentCategory = currentCategoryOrUnit || defaultCat.category;
     currentUnit = currentUnitOrIndex;
     currentIndex = typeof currentIndexOrLearned === 'number' ? currentIndexOrLearned : 0;
     learnedWordsParam = learnedWordsOrQuizStats;
     quizStats = quizStatsJson || '{}';
   } else {
-    currentUnit = currentCategoryOrUnit || 'Unit 1: Growing Up';
+    currentUnit = currentCategoryOrUnit || defaultTopic;
     currentIndex = currentUnitOrIndex;
     learnedWordsParam = currentIndexOrLearned as string | string[];
     quizStats = (learnedWordsOrQuizStats as string) || '{}';
