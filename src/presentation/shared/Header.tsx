@@ -101,7 +101,7 @@ export const Header: React.FC<HeaderProps> = (props) => {
   return (
     <header className="sticky top-0 z-40 bg-canvas border-b border-hairline px-3 py-2 sm:px-6 pt-[max(0.5rem,env(safe-area-inset-top,0px))] flex-shrink-0">
       <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
-        {/* Brand Logo (Lightning Glyph + Voltagent Aesthetic) */}
+        {/* Brand Logo (Lightning Glyph) */}
         <div
           className="flex items-center gap-2 cursor-pointer tap-bounce flex-shrink-0"
           onClick={() => {
@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = (props) => {
           <div className="hidden sm:block">
             <div className="flex items-center gap-1.5">
               <span className="font-bold tracking-tight text-ink-strong text-sm">
-                VOLT<span className="text-primary font-normal">VOCAB</span>
+                VOCA<span className="text-primary font-normal">LNQ</span>
               </span>
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-[4px] bg-canvas-soft text-primary border border-hairline uppercase tracking-wider">
                 v2.4

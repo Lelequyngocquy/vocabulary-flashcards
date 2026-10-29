@@ -27,7 +27,7 @@ export const QuizIntroView: React.FC<QuizIntroViewProps> = ({
       className="bg-canvas rounded-[8px] p-6 border border-hairline text-center space-y-4 my-auto"
     >
       <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-canvas-soft border border-hairline text-primary font-mono text-xs">
-        <span>⚡</span> VOLTAGENT_QUIZ_ENGINE
+        <span>⚡</span> VOCALNQ_QUIZ_ENGINE
       </div>
       <div>
         <h2 className="text-2xl font-normal text-ink-strong tracking-tight">Vocabulary Evaluation</h2>

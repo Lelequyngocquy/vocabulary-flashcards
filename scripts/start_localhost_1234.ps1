@@ -13,7 +13,7 @@ $PORT = 1234
 $URL = "http://localhost:$PORT"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host ">>> KHỞI ĐỘNG VOLTVOCAB TẠI $URL" -ForegroundColor Green
+Write-Host ">>> KHỞI ĐỘNG VOCALNQ TẠI $URL" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Kiểm tra cơ sở dữ liệu SQLite

@@ -100,7 +100,7 @@ export const AuthModal: React.FC<AuthModalProps> = (props) => {
 
         <div>
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-canvas-soft border border-hairline text-primary font-mono text-[11px] mb-2">
-            <span>⚡</span> VOLTAGENT AUTH
+            <span>⚡</span> VOCALNQ AUTH
           </div>
           <h3 id="authModalTitle" className="text-xl font-normal text-ink-strong tracking-tight">
             {mode === 'login' ? 'Sign in to workspace' : 'Create user credential'}

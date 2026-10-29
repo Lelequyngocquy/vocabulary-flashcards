@@ -8,6 +8,17 @@
 *.sqlite3
 backups/
 
+### Private Deployment & VPS Configurations
+deploy/
+scripts/*vps*
+duckdns/
+
+### Markdown Documents (Only README.md allowed in Git)
+*.md
+!README.md
+docs/
+strat.md
+
 ### Next.js & Node
 node_modules/
 .next/

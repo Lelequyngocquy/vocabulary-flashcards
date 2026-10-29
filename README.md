@@ -1,83 +1,97 @@
-# IELTS Vocab Mastery (VoltVocab v2.4)
+# VocaLNQ - English Vocabulary Flashcards
 
-Ứng dụng học từ vựng IELTS phong cách kỹ thuật cao Voltagent Dark Theme, được xây dựng dưới dạng **Fullstack Next.js** (cả Frontend và Backend trong 1 dự án) tích hợp cơ sở dữ liệu **SQLite** cục bộ.
-
----
-
-## 🚀 Tính năng nổi bật
-
-1. **Kiến trúc Fullstack Next.js**:
-   - Backend Route Handlers (`/api/words`, `/api/auth/*`, `/api/progress`).
-   - Server-Side Rendering (SSR) tải trực tiếp từ vựng từ SQLite với độ trễ 0ms.
-2. **Cơ sở dữ liệu SQLite**:
-   - Quản lý toàn bộ 1,265 từ vựng IELTS (`words`) với khóa chính tự tăng `id`.
-   - Quản lý tài khoản người dùng (`users`) với mã hóa mật khẩu Scrypt an toàn.
-   - Đồng bộ tiến độ học tập (`progress`) theo thời gian thực.
-3. **Frontend & Trải nghiệm học tập**:
-   - **Flashcards**: Lật thẻ 3D, cử chỉ vuốt Touch Swipe, phím tắt (Mũi tên xuống `↓` để lật, Trái/Phải để chuyển từ), phát âm và sao chép ví dụ.
-   - **Quiz Engine**: Kiểm tra 4 lựa chọn (EN ➔ VI, VI ➔ EN, Mix), tính điểm streak và hiệu ứng Confetti.
-   - **Dictionary**: Tìm kiếm từ vựng tức thời, lọc từ loại (noun, verb, adj, adv), lọc trạng thái Mastered/Learning.
-   - **Metrics**: Thống kê tiến độ theo 20 Units, tùy chỉnh tốc độ giọng đọc Speech Velocity.
-   - **Web Audio API**: Hiệu ứng âm thanh tổng hợp trực tiếp từ trình duyệt (tap, flip, chime, error) không cần tệp âm thanh ngoài.
+> A simple, mobile-first full-stack Next.js web app for learning English vocabulary with flashcards.
 
 ---
 
-## 🛠️ Hướng dẫn cài đặt & Chạy Local
+## 🚀 Key Features
 
-### 1. Cài đặt thư viện:
+1. **Full-Stack Next.js Architecture**:
+   - Modern App Router & Route Handlers (`/api/words`, `/api/auth/*`, `/api/progress`).
+   - Server-Side Rendering (SSR) reading directly from local SQLite with near-instant loading.
+   - Decoupled Clean Architecture with **Zustand** state engine for atomic re-renders and smooth UI.
+
+2. **SQLite Database**:
+   - Manages 1,265+ Cambridge & IELTS vocabulary words with relational 1:N schema (Categories ➔ Topics ➔ Words).
+   - User account system (`users`) with secure Scrypt hashing and JWT sessions.
+   - Real-time learning progress synchronization (`progress`).
+
+3. **Interactive Learning Experience**:
+   - **Flashcards**: 3D perspective flip card, touch swipe gestures, keyboard navigation (`↓` to flip, `←`/`→` to navigate), pronunciation, and copyable example sentences.
+   - **Quiz Engine**: 4-choice algorithmic multiple-choice test (EN ➔ VI, VI ➔ EN, Mixed), streak counter, and celebratory confetti effects.
+   - **Dictionary**: Instant search, Part-of-Speech filters (noun, verb, adj, adv), and Mastered/Learning status toggling.
+   - **Telemetry & Stats**: Progress tracking across all units with adjustable speech synthesis velocity.
+   - **Web Audio API**: Browser-synthesized sound effects (tap, flip, chime, correct, error) with zero external asset overhead.
+
+---
+
+## 🛠️ Quick Start & Local Development
+
+### 1. Install dependencies:
 ```bash
 npm install
 ```
 
-### 2. Nạp dữ liệu từ vựng vào SQLite:
+### 2. Seed SQLite database:
 ```bash
 npm run seed
 ```
 
-### 3. Khởi chạy ứng dụng:
+### 3. Start the application:
 
-#### Cách 1: Khởi chạy nhanh tại http://localhost:1234 (Khuyên dùng)
+#### Option A: Quick Launch at http://localhost:1234 (Recommended)
 ```bash
 npm run local
 ```
-Hoặc chạy trực tiếp script:
-- **Windows (CMD / Click đúp chuột)**: `.\scripts\start_localhost_1234.bat`
+Or directly run the helper scripts:
+- **Windows (CMD / Double-click)**: `.\scripts\start_localhost_1234.bat`
 - **PowerShell**: `.\scripts\start_localhost_1234.ps1`
 
-#### Cách 2: Khởi chạy môi trường phát triển mặc định (Port 3000)
+#### Option B: Default Development Server (Port 3000)
 ```bash
 npm run dev
-# Mở trình duyệt tại: http://localhost:3000
+# Open http://localhost:3000
 ```
 
-#### Cách 3: Biên dịch và chạy chế độ Production
+#### Option C: Production Build & Run
 ```bash
-# Biên dịch ứng dụng
 npm run build
-
-# Chạy bản production
 npm run start
 ```
 
 ---
 
-## 📁 Cấu trúc thư mục dự án
+## 📁 Project Structure
 
 ```text
-├── docs/                 # Tài liệu thiết kế và kiến trúc dự án
-│   ├── DESIGN-voltagent.md
-│   └── plan.md
-├── scripts/              # Các script hỗ trợ vận hành local
-│   ├── seed.js                  # Script nạp dữ liệu vào SQLite
-│   ├── words.sql                # Dữ liệu từ vựng thuần SQL (1,265 từ)
-│   ├── start_localhost_1234.bat # Script chạy nhanh localhost:1234 (CMD)
-│   └── start_localhost_1234.ps1 # Script chạy nhanh localhost:1234 (PowerShell)
-├── src/                  # Mã nguồn ứng dụng Next.js Fullstack
-│   ├── app/              # Next.js App Router & API Route Handlers
-│   ├── components/       # Các React components giao diện
-│   ├── lib/              # Tiện ích SQLite database, auth JWT, Web Audio
-│   └── types/            # TypeScript type definitions
-├── public/               # Tệp tĩnh công khai
-├── vocab.db              # Database SQLite cục bộ (git ignored)
-└── package.json          # Danh sách dependencies và npm scripts
+├── public/                 # Static public assets (icons, fonts)
+├── scripts/                # Utility scripts (database seeding, local runner)
+│   ├── seed.js             # SQLite database initializer and seed script
+│   ├── words.sql           # Normalized vocabulary SQL dump (1,265 words)
+│   ├── start_localhost_1234.bat
+│   └── start_localhost_1234.ps1
+├── src/
+│   ├── app/                # Next.js App Router (pages & API routes)
+│   │   ├── api/            # Route handlers (auth, words, progress)
+│   │   ├── layout.tsx      # Root HTML layout & fonts
+│   │   └── page.tsx        # SSR entry point
+│   ├── domain/             # Pure TypeScript domain entities & business logic
+│   │   ├── entities/       # Domain models (Word, Category, Quiz, User)
+│   │   └── engines/        # Filter & Quiz algorithms (Fisher-Yates, distractors)
+│   ├── infrastructure/     # External adapters & device I/O
+│   │   ├── api/            # Typed HTTP API clients (wordApi, authApi, progressApi)
+│   │   ├── device/         # Web Audio API & SpeechSynthesis services
+│   │   └── storage/        # Type-safe LocalStorage adapter
+│   ├── application/        # Zustand stores & custom application hooks
+│   │   ├── stores/         # useVocabStore, useAuthStore, useSettingsStore, useToastStore
+│   │   └── hooks/          # useFlashcards, useQuiz, useDictionary
+│   ├── presentation/       # User interface & React components
+│   │   ├── shared/         # Reusable UI (Header, MobileNav, Toast)
+│   │   ├── features/       # Feature views (flashcards, quiz, dictionary, stats, auth)
+│   │   └── AppShell.tsx    # Responsive application shell
+│   └── lib/                # SQLite connection pool & authentication utilities
+├── Dockerfile              # Production multi-stage Docker build
+├── package.json
+├── tailwind.config.ts
+└── tsconfig.json
 ```

@@ -15,13 +15,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'IELTS Vocab Mastery | Voltagent Engineering Design',
+  title: 'VocaLNQ | IELTS Vocabulary Mastery',
   description:
-    'IELTS vocabulary learning platform in Voltagent style: Dark canvas #101010, Electric Green #00d992, Hairline #3d3a39, mobile-optimized',
+    'A simple, mobile-first full-stack Next.js web app for learning English vocabulary with flashcards.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'VoltVocab',
+    title: 'VocaLNQ',
   },
 };
 
